@@ -16,20 +16,24 @@ input n = readFile name
          | otherwise = "example/" ++ ident ++ "-" ++ show n ++ ".txt"
     ident = "04"
 
--- returns a list of all the multi-character strings in the data
-parse1 :: String -> [[Char]]
-parse1 s = filter ((> 1) . length) . concatMap inits . concatMap tails $
-    forwards ++ map reverse forwards
+
+windows :: Int -> [a] -> [[a]]
+windows n = takeWhile ((== n) . length) . map (take n) . tails
+
+substrings2dN :: Int -> String -> [String]
+substrings2dN n s = concatMap (windows n) $ forwards ++ map reverse forwards
   where
     forwards = rows ++ cols ++ diag1s ++ diag7s
     rows = lines s
     cols = transpose rows
-    diag1s = map catMaybes . transpose $ zipWith (++) (iterate (Nothing :) []) (map (map Just) rows)
-    diag7s = map catMaybes . transpose $ zipWith (++) (iterate (Nothing :) []) (reverse $ map (map Just) rows)
+    justGrid = map (map Just) rows
+    padNothings = zipWith id (iterate ((Nothing :) .) id)
+    diagonalize = map catMaybes . transpose . padNothings
+    diag1s = diagonalize justGrid
+    diag7s = diagonalize $ reverse justGrid
 
-
-solve1 :: String -> String -> Int
-solve1 inp target = length . filter (== target) . parse1 $ inp
+solve1 :: String -> Int
+solve1 = length . filter (== "XMAS") . substrings2dN 4
 
 
 data Grid = G Int Int (Map (Int, Int) Char)
@@ -58,6 +62,6 @@ solve2 (G rowMax colMax board) =
 main :: IO ()
 main = do
     inp <- input 0
-    print $ solve1 inp "XMAS"
+    print $ solve1 inp
 
     print . solve2 . parse2 $ inp
