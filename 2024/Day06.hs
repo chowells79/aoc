@@ -94,8 +94,7 @@ solve2 b g@(Guard row col _) = sum
     [ 1
     | (l, Visited) <- M.toList (run1 b g)
     , l /= (row, col)
-    , let b' = M.insert l Obstacle b
-    , loops2 b' g
+    , loops2 (M.insert l Obstacle b) g
     ]
 
 
