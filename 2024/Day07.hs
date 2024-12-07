@@ -22,46 +22,26 @@ parse s = case readP_to_S full s of
     line = (,) <$> num <* (string ": ") <*> sepBy1 num (char ' ')
     num = read <$> many1 (satisfy isDigit)
 
-totals1 :: [Int] -> [Int]
-totals1 [] = error "totals called on empty list"
-totals1 (x:xs) = go x xs []
+valid :: [Int -> Int -> Int] -> Int -> [Int] -> Bool
+valid _ _ [] = False
+valid ops target (x:xs) = go x xs
   where
-    -- go acc _ | acc > target = id
-    go acc [] = (acc :)
-    go acc (y:ys) = go (acc + y) ys . go (acc * y) ys
+    go acc _ | acc > target = False
+    go acc [] = acc == target
+    go acc (y:ys) = or [ go (acc <#> y) ys | (<#>) <- ops ]
 
-valid1 :: Int -> [Int] -> Bool
-valid1 target xs = target `elem` totals1 xs
+solve :: [Int -> Int -> Int] -> [(Int, [Int])] -> Int
+solve ops xs = sum [ target | (target, xs) <- xs , valid ops target xs ]
 
-solve1 :: [(Int, [Int])] -> Int
-solve1 xs = sum
-    [ target
-    | (target, xs) <- xs
-    , valid1 target xs
-    ]
+ops1 :: [Int -> Int -> Int]
+ops1 = [(+), (*)]
 
-totals2 :: [Int] -> [Int]
-totals2 [] = error "totals called on empty list"
-totals2 (x:xs) = go x xs []
-  where
-    -- go acc _ | acc > target = id
-    go acc [] = (acc :)
-    go acc (y:ys) = go (acc + y) ys
-        . go (acc * y) ys .
-        go (read $ show acc ++ show y) ys
+ops2 :: [Int -> Int -> Int]
+ops2 = [(+), (*), \a b -> read $ show a ++ show b]
 
-valid2 :: Int -> [Int] -> Bool
-valid2 target xs = target `elem` totals2 xs
-
-solve2 :: [(Int, [Int])] -> Int
-solve2 xs = sum
-    [ target
-    | (target, xs) <- xs
-    , valid2 target xs
-    ]
 
 main :: IO ()
 main = do
     inp <- parse <$> input 0
-    print $ solve1 inp
-    print $ solve2 inp
+    print $ solve ops1 inp
+    print $ solve ops2 inp
