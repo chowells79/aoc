@@ -24,11 +24,11 @@ parse s = case readP_to_S full s of
 
 valid :: [Int -> Int -> Int] -> Int -> [Int] -> Bool
 valid _ _ [] = False
-valid ops target (x:xs) = go x xs
+valid ops target (x:xs) = foldr test (== target) xs x
   where
-    go acc _ | acc > target = False
-    go acc [] = acc == target
-    go acc (y:ys) = or [ go (acc <#> y) ys | (<#>) <- ops ]
+    test y go acc
+        | acc > target = False
+        | otherwise = or [ go (acc <#> y) | (<#>) <- ops ]
 
 solve :: [Int -> Int -> Int] -> [(Int, [Int])] -> Int
 solve ops xs = sum [ target | (target, xs) <- xs , valid ops target xs ]
