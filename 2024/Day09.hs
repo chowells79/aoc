@@ -24,7 +24,7 @@ sparsify :: [Int] -> Seq (Maybe Int)
 sparsify compact = Seq.fromList
     [ toId position
     | (position, count) <- zip [0..] compact
-    , _ <-[1 .. count]
+    , _ <- [1 .. count]
     ]
 
 toId :: Int -> Maybe Int
