@@ -30,7 +30,7 @@ main = do
         day = mkDay_ (read dayS)
     sessionKeyRaw <- readFile ".session_key"
     let sessionKey = filter (not . isSpace) sessionKeyRaw
-        userAgent = AoCUserAgent "private" "chowells79@gmail.com"
+        userAgent = AoCUserAgent "https://github.com/chowells79/aoc" "chowells79@gmail.com"
         opts = defaultAoCOpts userAgent year sessionKey
 
     released <- challengeReleased year day
@@ -43,12 +43,19 @@ main = do
             putStrLn "Input fetched."
         False -> putStrLn "Not released, skipping input."
 
+    makeSolution year day
+    makeExample year day
+
+
+makeSolution :: Integer -> Day -> IO ()
+makeSolution year day = do
     let ident = printf "%02d" (dayInt day)
         outName = printf "%d/Day%s.hs" year ident
 
     alreadyExists <- fileExist outName
     case alreadyExists of
-        True -> putStrLn "File already exists. Not overwriting."
+        True -> putStrLn $
+            "Solution file " ++ outName ++ " already exists. Not overwriting."
         False -> do
             tpl <- T.readFile "DayN.hs.tpl"
             let ctx "id" = T.pack ident
@@ -58,8 +65,22 @@ main = do
 
             TL.writeFile outName out
 
-            putStrLn "File created"
+            putStrLn "Solution file created"
 
             setFileMode outName $ foldr unionFileModes nullFileMode [
                 ownerModes, groupReadMode, groupExecuteMode,
                 otherReadMode, otherExecuteMode ]
+
+
+makeExample :: Integer -> Day -> IO ()
+makeExample year day = do
+    let ident = printf "%02d" (dayInt day) :: String
+        outName = printf "%d/example/%s-1.txt" year ident :: String
+
+    alreadyExists <- fileExist outName
+    case alreadyExists of
+        True -> putStrLn $
+            "Example input " ++ outName ++ " already exists. Not overwriting."
+        False -> do
+            T.writeFile outName $ T.pack ""
+            putStrLn "(Empty) example input created"
