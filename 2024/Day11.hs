@@ -23,8 +23,7 @@ step i
     | otherwise = [i * 2024]
   where
     is = show i
-    lis = length is
-    (q, r) = lis `quotRem` 2
+    (q, r) = length is `quotRem` 2
     (ui, li) = splitAt q is
 
 blink :: Map Integer Integer -> Map Integer Integer
