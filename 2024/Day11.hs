@@ -19,12 +19,12 @@ parse = fromListWith (+) . flip zip (repeat 1) . map read . words
 step :: Integer -> [Integer]
 step n
     | n == 0 = [1]
-    | parity == 0 = map read [ui, li]
+    | parity == 0 = map read [upper, lower]
     | otherwise = [n * 2024]
   where
     strN = show n
     (half, parity) = length strN `quotRem` 2
-    (ui, li) = splitAt half strN
+    (upper, lower) = splitAt half strN
 
 blink :: Map Integer Integer -> Map Integer Integer
 blink prev = fromListWith (+)
