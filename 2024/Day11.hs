@@ -17,21 +17,18 @@ parse :: String -> Map Integer Integer
 parse = fromListWith (+) . flip zip (repeat 1) . map read . words
 
 step :: Integer -> [Integer]
-step n
-    | n == 0 = [1]
+step i
+    | i == 0 = [1]
     | parity == 0 = map read [upper, lower]
-    | otherwise = [n * 2024]
+    | otherwise = [i * 2024]
   where
-    strN = show n
+    strN = show i
     (half, parity) = length strN `quotRem` 2
     (upper, lower) = splitAt half strN
 
 blink :: Map Integer Integer -> Map Integer Integer
-blink prev = fromListWith (+)
-    [ (n, count)
-    | (i, count) <- toList prev
-    , n <- step i
-    ]
+blink prev =
+    fromListWith (+) [ (j, count) | (i, count) <- toList prev, j <- step i ]
 
 multiblink :: Int -> Map Integer Integer -> Map Integer Integer
 multiblink n = head . drop n . iterate' blink
