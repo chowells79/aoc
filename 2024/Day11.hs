@@ -17,14 +17,14 @@ parse :: String -> Map Integer Integer
 parse = fromListWith (+) . flip zip (repeat 1) . map read . words
 
 step :: Integer -> [Integer]
-step i
-    | i == 0 = [1]
-    | r == 0 = map read [ui, li]
-    | otherwise = [i * 2024]
+step n
+    | n == 0 = [1]
+    | parity == 0 = map read [ui, li]
+    | otherwise = [n * 2024]
   where
-    is = show i
-    (q, r) = length is `quotRem` 2
-    (ui, li) = splitAt q is
+    strN = show n
+    (half, parity) = length strN `quotRem` 2
+    (ui, li) = splitAt half strN
 
 blink :: Map Integer Integer -> Map Integer Integer
 blink prev = fromListWith (+)
