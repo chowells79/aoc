@@ -30,11 +30,8 @@ blink :: Map Integer Integer -> Map Integer Integer
 blink prev =
     fromListWith (+) [ (j, count) | (i, count) <- toList prev, j <- step i ]
 
-multiblink :: Int -> Map Integer Integer -> Map Integer Integer
-multiblink n = head . drop n . iterate' blink
-
 solve :: Int -> Map Integer Integer -> Integer
-solve n = sum . multiblink n
+solve n = sum . head . drop n . iterate' blink
 
 main :: IO ()
 main = do
