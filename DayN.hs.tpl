@@ -21,7 +21,7 @@ parse s = case readP_to_S full s of
     full = munch (const True) <* eof
 
     num :: (Read a, Num a) => ReadP a
-    num = read <$$> many1 (satisfy isDigit)
+    num = read <$$> munch1 isDigit
 
 main :: IO ()
 main = do
