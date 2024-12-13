@@ -32,10 +32,10 @@ parse s = case readP_to_S full s of
     full = sepBy1 machine (char '\n') <* eof
 
     machine = (,,) <$> button <*> button <*> prize
-    button = (,) <$> hidden <*> hidden <* manyTill get (char '\n')
-    prize = (,) <$> hidden <*> hidden <* manyTill get (char '\n')
+    button = (,) <$> findNum <*> findNum <* manyTill get (char '\n')
+    prize = (,) <$> findNum <*> findNum <* manyTill get (char '\n')
 
-    hidden = num <++ (get *> hidden)
+    findNum = num <++ (get *> findNum)
     num = fromInteger . read <$> munch1 isDigit
 
 
