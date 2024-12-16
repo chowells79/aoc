@@ -3,8 +3,6 @@
 build-depends: base, containers, psqueues
 -}
 
-import Data.Bifunctor
-
 import Data.Set (Set)
 import qualified Data.Set as S
 
@@ -77,15 +75,12 @@ explore (s, _, open) = go S.empty $ P.singleton (s, R) 0 S.empty
                 ups _ = ((), Just (p, visited'))
 
 
-solve1 :: Maze -> Int
-solve1 m@(_, e, _) = head [ c | (c, s) <- explore m, S.member e s ]
+solve :: Maze -> (Int, Int)
+solve m@(_, e, _) = fmap S.size . head . filter (S.member e . snd) $ explore m
 
-solve2 :: Maze -> Int
-solve2 m@(_, e, _) = head [ S.size s | (c, s) <- explore m, S.member e s ]
 
 main :: IO ()
 main = do
     maze <- parse <$> input 0
 
-    print $ solve1 maze
-    print $ solve2 maze
+    print $ solve maze
