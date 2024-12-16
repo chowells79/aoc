@@ -32,11 +32,7 @@ parse s = (start, end, open)
 data Dir = U | R | D | L deriving (Eq, Ord, Show)
 
 foldDir :: a -> a -> a -> a -> Dir -> a
-foldDir a b c d dir = case dir of
-    U -> a
-    R -> b
-    D -> c
-    L -> d
+foldDir a b c d dir = case dir of { U -> a ; R -> b ; D -> c ; L -> d }
 
 type State = ((Int, Int), Dir)
 
@@ -82,5 +78,6 @@ solve m@(_, e, _) = fmap S.size . head . filter (S.member e . snd) $ explore m
 main :: IO ()
 main = do
     maze <- parse <$> input 0
-
-    print $ solve maze
+    let (part1, part2) = solve maze
+    print part1
+    print part2
