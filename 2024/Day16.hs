@@ -37,15 +37,13 @@ foldDir a b c d dir = case dir of { U -> a ; R -> b ; D -> c ; L -> d }
 type State = ((Int, Int), Dir)
 
 moves :: State -> [(Int, State)]
-moves (l, d) =
-    [ (1, (forward d l, d))
-    , (1001, (forward left l, left))
-    , (1001, (forward right l, right))
+moves (l@(r, c), d) =
+    [ (1, (forward, d))
+    , (1000, (l, foldDir L U R D d))
+    , (1000, (l, foldDir R D L U d))
     ]
   where
-    forward dir (r, c) = foldDir (r - 1, c) (r, c + 1) (r + 1, c) (r, c - 1) dir
-    left = foldDir L U R D d
-    right = foldDir R D L U d
+    forward = foldDir (r - 1, c) (r, c + 1) (r + 1, c) (r, c - 1) d
 
 explore :: Maze -> [(Int, Set (Int, Int))]
 explore (s, _, open) = go S.empty $ P.singleton (s, R) 0 S.empty
