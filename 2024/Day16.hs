@@ -76,7 +76,13 @@ explore (s, _, open) = go universe
 
 
 solve :: Maze -> (Infinite Int, Int)
-solve m@(_, e, _) = fmap S.size . head . filter (S.member e . snd) $ explore m
+solve m@(_, e, _) = (minCost, S.size $ S.unions allDirs)
+  where
+    all = explore m
+    found = dropWhile (S.notMember e . snd) all
+    minCost = fst $ head found
+    allDirs = filter (S.member e) . map snd .
+              takeWhile ((== minCost) . fst) $ found
 
 
 main :: IO ()
