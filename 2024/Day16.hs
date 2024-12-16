@@ -52,7 +52,7 @@ explore :: Maze -> [(Int, Set (Int, Int))]
 explore (s, _, open) = go universe
   where
     universe = P.insert (s, E) 0 S.empty $ P.fromList
-        [ ((l, d), maxBound `div` 2, S.empty)
+        [ ((l, d), maxBound, S.empty)
         | l <- S.toList open
         , d <- [N, E, S, W]
         ]
