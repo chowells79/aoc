@@ -1,13 +1,16 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base, containers, psqueues
+build-depends: base, containers, psqueues, hashable
 -}
+{-# Language DeriveGeneric, DeriveAnyClass #-}
 
 import Data.Set (Set)
 import qualified Data.Set as S
 
-import Data.OrdPSQ (OrdPSQ)
-import qualified Data.OrdPSQ as P
+import qualified Data.HashPSQ as P
+
+import GHC.Generics (Generic)
+import Data.Hashable (Hashable)
 
 input :: Int -> IO String
 input n = readFile name
@@ -29,44 +32,45 @@ parse s = (start, end, open)
     start = fst . head . filter ((== 'S') . snd) $ raw
     end = fst . head . filter ((== 'E') . snd) $ raw
 
-data Dir = U | R | D | L deriving (Eq, Ord, Show)
+data Dir = N | E | S | W deriving (Eq, Ord, Show, Generic, Hashable)
 
 foldDir :: a -> a -> a -> a -> Dir -> a
-foldDir a b c d dir = case dir of { U -> a ; R -> b ; D -> c ; L -> d }
+foldDir a b c d dir = case dir of { N -> a ; E -> b ; S -> c ; W -> d }
 
 type State = ((Int, Int), Dir)
 
 moves :: State -> [(Int, State)]
 moves (l@(r, c), d) =
     [ (1, (forward, d))
-    , (1000, (l, foldDir L U R D d))
-    , (1000, (l, foldDir R D L U d))
+    , (1000, (l, foldDir E S W N d))
+    , (1000, (l, foldDir W N E S d))
     ]
   where
     forward = foldDir (r - 1, c) (r, c + 1) (r + 1, c) (r, c - 1) d
 
 explore :: Maze -> [(Int, Set (Int, Int))]
-explore (s, _, open) = go S.empty $ P.singleton (s, R) 0 S.empty
+explore (s, _, open) = go universe
   where
-    go seen queue = case P.minView queue of
+    universe = P.insert (s, E) 0 S.empty $ P.fromList
+        [ ((l, d), maxBound `div` 2, S.empty)
+        | l <- S.toList open
+        , d <- [N, E, S, W]
+        ]
+    go queue = case P.minView queue of
         Nothing -> []
-        Just (now, cost, visited, queue')
-            | S.member now seen -> go seen queue'
-            | otherwise -> (cost, visited') : go seen' queue''
+        Just (now, cost, visited, queue') -> (cost, visited') : go queue''
           where
             visited' = S.insert (fst now) visited
-            seen' = S.insert now seen
-            queue'' = foldl' upsert queue'
+            queue'' = foldl' combine queue'
                       [ (cost + c, next)
                       | (c, next) <- moves now
-                      , S.member (fst next) open
                       ]
-            upsert q (p, k) = case P.alter ups k q of (_, q') -> q'
+            combine q (p, k) = snd $ P.alter ((,) () . fmap dec) k q
               where
-                ups (Just (p', v'))
-                    | p' == p = ((), Just (p, S.union v' visited'))
-                    | p' < p = ((), Just (p', v'))
-                ups _ = ((), Just (p, visited'))
+                dec (p', v')
+                    | p < p' = (p, visited')
+                    | p == p' = (p, S.union v' visited')
+                    | otherwise = (p', v')
 
 
 solve :: Maze -> (Int, Int)
