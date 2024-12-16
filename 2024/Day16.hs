@@ -2,7 +2,7 @@
 {- cabal:
 build-depends: base, containers, psqueues, hashable
 -}
-{-# Language DeriveGeneric, DeriveAnyClass #-}
+{-# Language DeriveAnyClass, DeriveFunctor, DeriveGeneric #-}
 
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -48,11 +48,13 @@ moves (l@(r, c), d) =
   where
     forward = foldDir (r - 1, c) (r, c + 1) (r + 1, c) (r, c - 1) d
 
-explore :: Maze -> [(Int, Set (Int, Int))]
+data Infinite a = Finite a | Infinity deriving (Eq, Ord, Show, Functor)
+
+explore :: Maze -> [(Infinite Int, Set (Int, Int))]
 explore (s, _, open) = go universe
   where
-    universe = P.insert (s, E) 0 S.empty $ P.fromList
-        [ ((l, d), maxBound, S.empty)
+    universe = P.insert (s, E) (Finite 0) S.empty $ P.fromList
+        [ ((l, d), Infinity, S.empty)
         | l <- S.toList open
         , d <- [N, E, S, W]
         ]
@@ -62,7 +64,7 @@ explore (s, _, open) = go universe
           where
             visited' = S.insert (fst now) visited
             queue'' = foldl' combine queue'
-                      [ (cost + c, next)
+                      [ (fmap (+ c) cost, next)
                       | (c, next) <- moves now
                       ]
             combine q (p, k) = snd $ P.alter ((,) () . fmap dec) k q
@@ -73,7 +75,7 @@ explore (s, _, open) = go universe
                     | otherwise = (p', v')
 
 
-solve :: Maze -> (Int, Int)
+solve :: Maze -> (Infinite Int, Int)
 solve m@(_, e, _) = fmap S.size . head . filter (S.member e . snd) $ explore m
 
 
