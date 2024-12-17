@@ -54,10 +54,10 @@ explore :: Maze -> [(Infinite Int, Set (Int, Int))]
 explore (s, _, open) = go universe
   where
     universe = P.insert (s, E) (Finite 0) S.empty $ P.fromList
-        [ ((l, d), Infinity, S.empty)
-        | l <- S.toList open
-        , d <- [N, E, S, W]
-        ]
+               [ ((l, d), Infinity, S.empty)
+               | l <- S.toList open
+               , d <- [N, E, S, W]
+               ]
     go queue = case P.minView queue of
         Nothing -> []
         Just (now, cost, visited, queue') -> (cost, visited') : go queue''
@@ -76,13 +76,13 @@ explore (s, _, open) = go universe
 
 
 solve :: Maze -> (Infinite Int, Int)
-solve m@(_, e, _) = (minCost, S.size allUsed)
+solve m@(_, e, _) = (minCost, count)
   where
     all = explore m
     found = dropWhile (S.notMember e . snd) all
     minCost = fst $ head found
-    allUsed = S.unions . filter (S.member e) . map snd .
-              takeWhile ((== minCost) . fst) $ found
+    count = S.size . S.unions . filter (S.member e) . map snd .
+            takeWhile ((== minCost) . fst) $ found
 
 
 main :: IO ()
