@@ -39,10 +39,10 @@ arrangements towels pat = results M.! pat
     results = M.fromList $ [ (p, arrs p) | p <- tails pat ]
     arrs p = sum $ do
         t <- towels
-        case stripPrefix t p of
-            Nothing -> [ 0 ]
-            Just [] -> [ 1 ]
-            Just xs -> [ results M.! xs ]
+        pure $ case stripPrefix t p of
+            Nothing -> 0
+            Just [] -> 1
+            Just xs -> results M.! xs
 
 
 solve1 :: [String] -> [String] -> Int
