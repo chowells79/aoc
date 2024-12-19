@@ -43,7 +43,7 @@ arrangements towels pat = results M.! pat
             Just xs -> results M.! xs
 
 solve1 :: [String] -> [String] -> Int
-solve1 towels = length . filter ((/= 0) . arrangements towels)
+solve1 towels = sum . map (min 1 . arrangements towels)
 
 solve2 :: [String] -> [String] -> Int
 solve2 towels = sum . map (arrangements towels)
