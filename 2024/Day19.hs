@@ -3,9 +3,9 @@
 build-depends: base, containers
 -}
 
-import Text.ParserCombinators.ReadP
-
+import Data.Bifoldable (bitraverse_)
 import Data.List (stripPrefix, tails)
+import Text.ParserCombinators.ReadP
 
 import Data.Map (Map)
 import qualified Data.Map.Lazy as M
@@ -31,10 +31,11 @@ parse s = case readP_to_S full s of
     color = choice $ map char "wubrg"
 
 
-arrangements :: [String] -> String -> Int
-arrangements towels pat = results M.! pat
+solve :: [String] -> [String] -> (Int, Int)
+solve towels patterns = (sum $ map (min 1) counts, sum counts)
   where
-    results = M.fromList $ [ (p, arrs p) | p <- tails pat ]
+    results = M.fromList $ [ (p, arrs p) | pat <- patterns, p <- tails pat ]
+    counts = map (results M.!) patterns
     arrs p = sum $ do
         t <- towels
         pure $ case stripPrefix t p of
@@ -42,14 +43,7 @@ arrangements towels pat = results M.! pat
             Just [] -> 1
             Just xs -> results M.! xs
 
-solve1 :: [String] -> [String] -> Int
-solve1 towels = sum . map (min 1 . arrangements towels)
-
-solve2 :: [String] -> [String] -> Int
-solve2 towels = sum . map (arrangements towels)
-
 main :: IO ()
 main = do
     (ts, ps) <- parse <$> input 0
-    print $ solve1 ts ps
-    print $ solve2 ts ps
+    bitraverse_ print print $ solve ts ps
