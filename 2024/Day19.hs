@@ -34,8 +34,8 @@ parse s = case readP_to_S full s of
 solve :: [String] -> [String] -> (Int, Int)
 solve towels patterns = (sum $ map (min 1) counts, sum counts)
   where
-    results = M.fromList $ [ (p, arrs p) | pat <- patterns, p <- tails pat ]
     counts = map (results M.!) patterns
+    results = M.fromList $ [ (p, arrs p) | pat <- patterns, p <- tails pat ]
     arrs p = sum $ do
         t <- towels
         pure $ case stripPrefix t p of
