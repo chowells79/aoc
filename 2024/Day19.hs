@@ -27,7 +27,7 @@ parse s = case readP_to_S full s of
   where
     full = (,) <$> towels <*> patterns <* eof
 
-    towels = sepBy1 (many1 color) (string ", ") <* char '\n' <* char '\n'
+    towels = sepBy1 (many1 color) (string ", ") <* string "\n\n"
     patterns = endBy1 (many1 color) (char '\n')
 
     color = choice $ map char "wubrg"
