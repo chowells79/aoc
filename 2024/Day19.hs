@@ -8,7 +8,7 @@ import Data.List (stripPrefix, tails)
 import Text.ParserCombinators.ReadP
 
 import Data.Map (Map)
-import qualified Data.Map.Lazy as M
+import qualified Data.Map as M
 
 
 input :: Int -> IO String
