@@ -4,9 +4,8 @@ build-depends: base, containers
 -}
 
 import Text.ParserCombinators.ReadP
-import Data.Char (isDigit)
 
-import Data.List
+import Data.List (stripPrefix, tails)
 
 import Data.Map (Map)
 import qualified Data.Map.Lazy as M
@@ -18,7 +17,6 @@ input n = readFile name
     name | n == 0 = "input/" ++ ident ++ ".txt"
          | otherwise = "example/" ++ ident ++ "-" ++ show n ++ ".txt"
     ident = "19"
-
 
 parse :: String -> ([String], [String])
 parse s = case readP_to_S full s of
@@ -44,13 +42,11 @@ arrangements towels pat = results M.! pat
             Just [] -> 1
             Just xs -> results M.! xs
 
-
 solve1 :: [String] -> [String] -> Int
 solve1 towels = length . filter ((/= 0) . arrangements towels)
 
 solve2 :: [String] -> [String] -> Int
 solve2 towels = sum . map (arrangements towels)
-
 
 main :: IO ()
 main = do
