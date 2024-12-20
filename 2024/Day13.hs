@@ -1,4 +1,4 @@
-#!/usr/bin/env cabal
+#!/usr/bin/env -S cabal run --allow-newer=template-haskell,base,ghc-boot-th,ghc-prim
 {- cabal:
 build-depends: base, linear
 -}
