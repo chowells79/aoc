@@ -66,6 +66,3 @@ main = do
     inp <- parse <$> input 0
     print $ solve inp
     print . solve $ map relocate inp
-
-
-
