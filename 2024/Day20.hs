@@ -67,26 +67,26 @@ solve (start, end, open) cheatSize threshold = length $ winningCheats
   where
     steps = zip [0..] $ explore start open
     fair = head [ i | (i, s) <- steps, S.member end s ]
+    profitable = fair - threshold
 
     remaining = M.fromList $ do
-        (i, s) <- steps
+        (i, s) <- zip [0..] $ explore end open
         loc <- S.toList s
-        pure $ (loc, fair - i)
+        pure $ (loc, i)
 
     winningCheats = do
-        (i, s) <- steps
+        (i, s) <- takeWhile ((< profitable) . fst) steps
         loc <- S.toList s
-        (cheat, c) <- cheatMoves cheatSize loc
+        let skip = min cheatSize $ profitable - i
+        (cheat, c) <- cheatMoves skip loc
         case M.lookup cheat remaining of
             Nothing -> []
-            Just j | fair - (i + j + c) >= threshold -> pure $ (loc, cheat)
+            Just j | i + j + c <= profitable -> pure $ (loc, cheat)
                    | otherwise -> []
 
 
 main :: IO ()
 main = do
     maze@(start, end, open) <- parse <$> input 0
-    print $ S.size open
-
     print $ solve maze 2 100
     print $ solve maze 20 100
