@@ -1,13 +1,11 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base, megaparsec
+build-depends: base
 -}
 
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
+import Text.ParserCombinators.ReadP
+import Data.Char (isDigit)
 
-import Data.Void
 import Data.Maybe
 
 
@@ -19,29 +17,28 @@ input n = readFile name
     ident = "03"
 
 
+decimal :: ReadP Int
+decimal = read <$> munch1 (isDigit)
+
 toPairs :: String -> [(Int, Int)]
-toPairs s = case parse pairs "" s of
-    Left errs -> error $ errorBundlePretty errs
-    Right xs -> catMaybes xs
+toPairs s = case readP_to_S full s of
+              [(x, "")] -> x
+              x -> error $ "Parse error: " ++ (show x)
   where
-    pairs :: Parsec Void String [Maybe (Int, Int)]
-    pairs = manyTill possimul eof
+    full = catMaybes <$> manyTill possimul eof
     mul = (,) <$ string "mul(" <*> decimal <* char ',' <*> decimal <* char ')'
-    possimul = Just <$> try mul <|> Nothing <$ anySingle
+    possimul = (Just <$> mul) <++ (Nothing <$ get)
 
 
 toEnabledPairs :: String -> [(Int, Int)]
-toEnabledPairs s = case parse pairs "" s of
-    Left errs -> error $ errorBundlePretty errs
-    Right xs -> catMaybes xs
+toEnabledPairs s =  case readP_to_S full s of
+                      [(x, "")] -> x
+                      x -> error $ "Parse error: " ++ (show x)
   where
-    pairs :: Parsec Void String [Maybe (Int, Int)]
-    pairs = manyTill possimul eof
+    full = catMaybes <$> manyTill possimul eof
     mul = (,) <$ string "mul(" <*> decimal <* char ',' <*> decimal <* char ')'
-    don't = string "don't()" <* manyTill anySingle (() <$ string "do()" <|> eof)
-    possimul = Just <$> try mul <|>
-               Nothing <$ try don't <|>
-               Nothing <$ anySingle
+    don't = string "don't()" <* manyTill get ((() <$ string "do()") +++ eof)
+    possimul = (Just <$> mul) <++ (Nothing <$ don't) <++ (Nothing <$ get)
 
 
 main :: IO ()
