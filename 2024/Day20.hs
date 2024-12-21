@@ -42,11 +42,11 @@ neighbors (r, c) = [ (r - 1, c), (r, c + 1), (r + 1, c), (r, c - 1) ]
 
 cheatMoves :: Int -> Loc -> [(Loc, Int)]
 cheatMoves max (r, c) = do
-    total <- [ 2 .. max ]
-    b <- [ 0 .. total - 1 ]
-    let a = total - b
+    cost <- [ 2 .. max ]
+    b <- [ 0 .. cost - 1 ]
+    let a = cost - b
     loc <- [ (r - a, c + b), (r + b, c + a), (r + a, c - b), (r - b, c - a) ]
-    pure $ (loc, total)
+    pure (loc, cost)
 
 
 explore :: Loc -> Set Loc -> [Set Loc]
@@ -56,37 +56,37 @@ explore start open = go ss $ open S.\\ ss
 
     go edge avail
         | S.null edge = []
-        | otherwise = edge : continue
+        | otherwise = edge : go edge' avail'
       where
-        near = S.fromList $ S.toList edge >>= neighbors
-        continue = go (S.intersection near avail) (avail S.\\ near)
+        edge' = S.intersection avail near
+        avail' = S.difference avail near
+        near = S.fromList $ neighbors =<< S.toList edge
 
 
 solve :: Maze -> Int -> Int -> Int
 solve (start, end, open) cheatSize threshold = length $ winningCheats
   where
     steps = zip [0..] $ explore start open
-    fair = head [ i | (i, s) <- steps, S.member end s ]
+    fair = head [ soFar | (soFar, edge) <- steps, S.member end edge ]
     profitable = fair - threshold
 
     remaining = M.fromList $ do
-        (i, s) <- zip [0..] $ explore end open
-        loc <- S.toList s
-        pure $ (loc, i)
+        (remains, edge) <- zip [0..] $ explore end open
+        loc <- S.toList edge
+        pure (loc, remains)
 
     winningCheats = do
-        (i, s) <- takeWhile ((< profitable) . fst) steps
-        loc <- S.toList s
-        let skip = min cheatSize $ profitable - i
-        (cheat, c) <- cheatMoves skip loc
-        case M.lookup cheat remaining of
-            Nothing -> []
-            Just j | i + j + c <= profitable -> pure $ (loc, cheat)
-                   | otherwise -> []
+        (soFar, edge) <- steps
+        loc <- S.toList edge
+        let maxCost = min cheatSize (profitable - soFar)
+        (cheat, cost) <- cheatMoves maxCost loc
+        remains <- maybeToList $ M.lookup cheat remaining
+        guard $ soFar + remains + cost <= profitable
+        pure (loc, cheat)
 
 
 main :: IO ()
 main = do
-    maze@(start, end, open) <- parse <$> input 0
+    maze <- parse <$> input 0
     print $ solve maze 2 100
     print $ solve maze 20 100
