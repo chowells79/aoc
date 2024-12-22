@@ -53,10 +53,7 @@ solve2 :: [Int] -> Int
 solve2 monkeys = maximum bananas
   where
     triggers = map monkeyTriggers monkeys
-    bananas = do
-        let range = [ -9 .. 9 ]
-        k <- (,,,) <$> range <*> range <*> range <*> range
-        pure $ sum [ fromMaybe 0 b | t <- triggers, let b = M.lookup k t ]
+    bananas = M.unionsWith (+) triggers
 
 
 main :: IO ()
