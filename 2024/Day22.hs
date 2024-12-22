@@ -11,8 +11,8 @@ import Data.Bits (xor, shiftR, shiftL)
 import Data.List
 import Data.Maybe
 
-import Data.Map (Map)
-import qualified Data.Map as M
+import Data.IntMap (IntMap)
+import qualified Data.IntMap as M
 
 input :: Int -> IO String
 input n = readFile name
@@ -36,16 +36,17 @@ solve1 :: [Int] -> Int
 solve1 = sum . map ((!! 2000) . iterate' step)
 
 
-monkeyTriggers :: Int -> Map (Int, Int, Int, Int) Int
+monkeyTriggers :: Int -> IntMap Int
 monkeyTriggers x = addDeltas M.empty prices
   where
     prices = map (`rem` 10) . take 2001 $ iterate' step x
-    addDeltas m (a:xs@(b:c:d:e:_))
-        | M.member k m = addDeltas m xs
-        | otherwise = m' `seq` addDeltas m' xs
+    addDeltas m (a:xs@(b:c:d:e:_)) = m' `seq` addDeltas m' xs
       where
-        k = (b - a, c - b, d - c, e - d)
-        m' = M.insert k e m
+        k = (10 + b - a) +
+            (10 + c - b) * 100 +
+            (10 + d - c) * 10000 +
+            (10 + e - d) * 1000000
+        m' = M.insertWith (const id) k e m
     addDeltas m _ = m
 
 
