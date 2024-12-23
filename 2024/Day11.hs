@@ -3,7 +3,7 @@
 build-depends: base, containers
 -}
 
-import Data.Bitraversable (firstA)
+import Data.Bitraversable (bitraverse)
 import Data.List (iterate')
 import Data.Map (Map, fromListWith, toList)
 
@@ -28,7 +28,7 @@ step i
     (upper, lower) = splitAt half strN
 
 blink :: Map Integer Integer -> Map Integer Integer
-blink prev = fromListWith (+) $ firstA step =<< toList prev
+blink prev = fromListWith (+) $ bitraverse step pure =<< toList prev
 
 solve :: Int -> Map Integer Integer -> Integer
 solve n = sum . head . drop n . iterate' blink
