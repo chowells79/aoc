@@ -1,6 +1,6 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base, containers, maximal-cliques
+build-depends: base, containers
 -}
 
 import Control.Monad
@@ -17,9 +17,6 @@ import Data.Set (Set)
 import qualified Data.Set as S
 
 
-import qualified Data.Algorithm.MaximalCliques as MC
-
-
 input :: Int -> IO String
 input n = readFile name
   where
@@ -28,9 +25,9 @@ input n = readFile name
     ident = "23"
 
 
-type Graph = Map String (Set String)
+type Graph a = Map a (Set a)
 
-parse :: String -> Map String (Set String)
+parse :: String -> Graph String
 parse s = case readP_to_S full s of
             [(x, "")] -> x
             x -> error $ "Parse error: " ++ (show x)
@@ -44,54 +41,45 @@ parse s = case readP_to_S full s of
         [ (x, S.singleton y), (y, S.singleton x) ]
 
 
-threeCliques :: Graph -> Set (Set String)
+
+threeCliques :: Graph String -> Set (Set String)
 threeCliques g = S.fromList $ do
     (s, e1) <- M.toList g
-    t <- S.toList e1
-    let e2 = g M.! t
-        thirds = S.intersection e1 e2
-    u <- S.toList thirds
+    (t:us) <- tails $ S.toList e1
+    u <- us
+    guard . S.member t $ g M.! u
     pure $ S.fromList [s, t, u]
 
-solve1 :: Graph -> Int
+solve1 :: Graph String -> Int
 solve1 = S.size . S.filter (any ("t" `isPrefixOf`)) . threeCliques
 
 
-
-edge :: Graph -> String -> String -> Bool
-edge g s t = S.member s $ g M.! t
-
-mergeTCliques :: Graph -> Set (Set String) -> Set (Set String)
-mergeTCliques g xs = S.fromList $ do
-    (x:ys) <- tails $ S.toList xs
-    y <- ys
-    guard $ S.size (S.intersection x y) == S.size x - 1
-    let n1 = S.findMin $ x S.\\ y
-    let n2 = S.findMin $ y S.\\ x
-    guard $ edge g n1 n2
-    let u = S.union x y
-    guard $ any ("t" `isPrefixOf`) u
-    pure u
-
-solve2 :: Graph -> String
-solve2 g = format . last . go . threeCliques $ g
+-- finds all maximal cliques in a graph
+simplestBronKerbosch :: Ord a => Graph a -> [Set a]
+simplestBronKerbosch g = outer S.empty (M.keysSet g) S.empty []
   where
-    go s | S.null s = []
-         | otherwise = s : go (mergeTCliques g s)
-    format = intercalate "," . S.toList . S.findMin
+    outer r p x
+        | S.null p = if S.null x then (r :) else id
+        | otherwise = inner r p x
+    inner r p x =
+        case S.minView p of
+            Nothing -> id
+            Just (v, p') ->
+                outer (S.insert v r) (narrow p) (narrow x) .
+                inner r p' (S.insert v x)
+              where
+                narrow z = S.intersection z (g M.! v)
 
 
-solve2a :: Graph -> String
-solve2a g = intercalate "," . largest . hasT $ cliques
+solve2 :: Graph String -> String
+solve2 = intercalate "," . S.toList . largest . simplestBronKerbosch
   where
-    hasT = filter $ any ("t" `isPrefixOf`)
-    largest = last . sortBy (comparing length)
-    cliques = MC.getMaximalCliques (edge g) (S.toList $ M.keysSet g)
+    largest = last . sortBy (comparing S.size)
+
+
 
 main :: IO ()
 main = do
     g <- parse <$> input 0
     print $ solve1 g
-    putStrLn $ solve2a g
     putStrLn $ solve2 g
-
