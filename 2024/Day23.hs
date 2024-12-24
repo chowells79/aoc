@@ -47,7 +47,7 @@ threeCliques g = S.fromList $ do
     (s, e1) <- M.toList g
     (t:us) <- tails $ S.toList e1
     u <- us
-    guard . S.member t $ g M.! u
+    guard $ S.member t (g M.! u)
     pure $ S.fromList [s, t, u]
 
 solve1 :: Graph String -> Int
@@ -56,26 +56,25 @@ solve1 = S.size . S.filter (any ("t" `isPrefixOf`)) . threeCliques
 
 -- finds all maximal cliques in a graph
 simplestBronKerbosch :: Ord a => Graph a -> [Set a]
-simplestBronKerbosch g = outer S.empty (M.keysSet g) S.empty []
+simplestBronKerbosch g = go S.empty (M.keysSet g) S.empty []
   where
-    outer r p x
-        | S.null p = if S.null x then (r :) else id
-        | otherwise = inner r p x
-    inner r p x =
-        case S.minView p of
-            Nothing -> id
-            Just (v, p') ->
-                outer (S.insert v r) (narrow p) (narrow x) .
-                inner r p' (S.insert v x)
-              where
-                narrow z = S.intersection z (g M.! v)
+    go r p x = case S.minView p of
+        Nothing -> id
+        Just (v, p') -> addV . skipV
+          where
+            skipV = go r p' (S.insert v x)
+            addV | S.null nearP = if S.null nearX then (added :) else id
+                 | otherwise = go added nearP nearX
+            added = S.insert v r
+            neighbors = g M.! v
+            nearP = S.intersection p neighbors
+            nearX = S.intersection x neighbors
 
 
 solve2 :: Graph String -> String
 solve2 = intercalate "," . S.toList . largest . simplestBronKerbosch
   where
     largest = last . sortBy (comparing S.size)
-
 
 
 main :: IO ()
