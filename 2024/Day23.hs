@@ -46,8 +46,9 @@ threeCliques :: Graph String -> Set (Set String)
 threeCliques g = S.fromList $ do
     (s, e1) <- M.toList g
     (t:us) <- tails $ S.toList e1
+    let tn = g M.! t
     u <- us
-    guard $ S.member t (g M.! u)
+    guard $ S.member u tn
     pure $ S.fromList [s, t, u]
 
 solve1 :: Graph String -> Int
