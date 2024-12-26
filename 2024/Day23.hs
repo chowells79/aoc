@@ -56,24 +56,24 @@ solve1 = S.size . S.filter (any ("t" `isPrefixOf`)) . threeCliques
 
 
 -- finds all maximal cliques in a graph
-simplestBronKerbosch :: Ord a => Graph a -> [Set a]
-simplestBronKerbosch g = go S.empty (M.keysSet g) S.empty []
+bronKerbosch :: Ord a => Graph a -> [Set a]
+bronKerbosch g = go S.empty (M.keysSet g) S.empty []
   where
-    go r p x = case S.minView p of
+    go r p x | S.null p = if S.null x then (r :) else id
+             | otherwise = scan r p x (g M.! S.findMin p)
+    scan r p x pivotSet = case S.minView p of
         Nothing -> id
-        Just (v, p') -> addV . skipV
+        Just (v, p') -> top . scan r p' (S.insert v x) pivotSet
           where
-            skipV = go r p' (S.insert v x)
-            addV | S.null nearP = if S.null nearX then (added :) else id
-                 | otherwise = go added nearP nearX
-            added = S.insert v r
-            neighbors = g M.! v
-            nearP = S.intersection p neighbors
-            nearX = S.intersection x neighbors
+            top | S.member v pivotSet = id
+                | otherwise = go (S.insert v r) nearP nearX
+            nearP = S.intersection p nv
+            nearX = S.intersection x nv
+            nv = g M.! v
 
 
 solve2 :: Graph String -> String
-solve2 = intercalate "," . S.toList . largest . simplestBronKerbosch
+solve2 = intercalate "," . S.toList . largest . bronKerbosch
   where
     largest = last . sortBy (comparing S.size)
 
