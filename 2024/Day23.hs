@@ -3,8 +3,8 @@
 build-depends: base, containers
 -}
 
-import Data.List (intercalate, isPrefixOf, sortBy)
-import Data.Ord
+import Data.List (intercalate, isPrefixOf, sort, sortBy)
+import Data.Ord (comparing)
 
 import Text.ParserCombinators.ReadP
 import Data.Char (isAlpha)
@@ -14,6 +14,7 @@ import qualified Data.Map as M
 
 import Data.Set (Set)
 import qualified Data.Set as S
+
 
 
 import Control.Monad (guard)
@@ -26,16 +27,15 @@ import qualified Data.IntMap.Strict as IM
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
 
--- | Returns a list of all maximal cliques in the input graph. The
--- cliques are not returned in any particular order, but the elements
--- in each clique are returned in the same order that they are folded
--- over in the input collection
+-- | Returns a list of all maximal cliques in the input graph. Neither
+-- the cliques nor the elements within each clique are returned in any
+-- particular order.
 maximalCliques
     :: Foldable f
     => f a -- ^ a collection of all nodes in the graph
     -> (a -> a -> Bool) -- ^ whether an edge exists between two nodes
     -> [[a]]
-maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch id graph IS.empty []
+maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
   where
     ns = IM.fromList $ zip [0..] (toList nodes)
     graph = IM.fromListWith IS.union $ do
@@ -52,12 +52,12 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch id graph IS.empty []
 -- as it will avoid that issue. It's also generally nicer to use
 -- anyway.
 bronKerbosch
-    :: ([Int] -> [Int]) -- ^ diffed current clique element accumulator
+    :: [Int] -- ^ current clique element accumulator
     -> IntMap IntSet -- ^ unvisited nodes and their adjacency sets
     -> IntSet -- ^ excluded nodes, visited in earlier passes
     -> [[Int]] -> [[Int]] -- ^ diffed maximal clique list
 bronKerbosch r p0 x0 = case IM.lookupMin p0 of
-    Nothing -> if IS.null x0 then (r [] :) else id
+    Nothing -> if IS.null x0 then (r :) else id
     Just (_, pivotSet) -> go p0 x0 $ IM.toList p0
       where
         go _ _ [] = id
@@ -65,7 +65,7 @@ bronKerbosch r p0 x0 = case IM.lookupMin p0 of
             | IS.member v pivotSet = go p x ls
             | otherwise = addV . skipV
           where
-            addV = np `seq` nx `seq` bronKerbosch (r . (v :)) np nx
+            addV = np `seq` nx `seq` bronKerbosch (v : r) np nx
             np = IM.restrictKeys p neighbors
             nx = IS.intersection x neighbors
             skipV = p' `seq` x' `seq` go p' x' ls
@@ -110,7 +110,7 @@ solve1 :: Map String (Set String) -> Int
 solve1 = S.size . S.filter (any ("t" `isPrefixOf`)) . threeCliques
 
 solve2 :: Map String (Set String) -> String
-solve2 g = intercalate "," . last . sortBy (comparing length) $ maxes
+solve2 g = intercalate "," . sort . last . sortBy (comparing length) $ maxes
   where
     maxes = maximalCliques (M.keysSet g) (\s t -> S.member s $ g M.! t)
 
