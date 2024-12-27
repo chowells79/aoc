@@ -3,8 +3,7 @@
 build-depends: base, containers
 -}
 
-import Control.Monad
-import Data.List
+import Data.List (intercalate, isPrefixOf, sortBy)
 import Data.Ord
 
 import Text.ParserCombinators.ReadP
@@ -17,6 +16,57 @@ import Data.Set (Set)
 import qualified Data.Set as S
 
 
+import Control.Monad (guard)
+import Data.Foldable (toList)
+import Data.List (tails)
+
+import Data.IntMap (IntMap)
+import qualified Data.IntMap.Strict as IM
+
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as IS
+
+-- | Returns a list of all maximal cliques in the input graph. The
+-- cliques are not returned in any particular order, but the elements
+-- in each clique are returned in the same order that they are folded
+-- over in the input collection
+maximalCliques
+    :: Foldable f
+    => f a -- ^ a collection of all nodes in the graph
+    -> (a -> a -> Bool) -- ^ whether an edge exists between two nodes
+    -> [[a]]
+maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch id graph IS.empty []
+  where
+    ns = IM.fromList $ zip [0..] (toList nodes)
+    graph = IM.fromListWith IS.union $ do
+        ((i, m):jns) <- tails $ IM.toList ns
+        (j, n) <- jns
+        guard $ edge m n
+        [ (i, IS.singleton j), (j, IS.singleton i) ]
+
+bronKerbosch
+    :: ([Int] -> [Int]) -- ^ CPSed clique element accumulator
+    -> IntMap IntSet -- ^ unvisited nodes and their adjacency sets
+    -> IntSet -- ^ excluded nodes, visited in earlier passes
+    -> [[Int]] -> [[Int]] -- ^ CPSed list of cliques
+bronKerbosch r p0 x0
+    | IM.null p0 = if IS.null x0 then (r [] :) else id
+    | otherwise = go p0 x0
+  where
+    pivotSet = snd $ IM.findMin p0
+    go p x = case IM.minViewWithKey p of
+        Nothing -> id
+        Just ((v, neighbors), p')
+            | IS.member v pivotSet -> go p' x
+            | otherwise -> addV . go p' (IS.insert v x)
+          where
+            addV = bronKerbosch (r . (v :)) nearP nearX
+            nearP = IM.restrictKeys p neighbors
+            nearX = IS.intersection x neighbors
+
+
+
+
 input :: Int -> IO String
 input n = readFile name
   where
@@ -24,10 +74,7 @@ input n = readFile name
          | otherwise = "example/" ++ ident ++ "-" ++ show n ++ ".txt"
     ident = "23"
 
-
-type Graph a = Map a (Set a)
-
-parse :: String -> Graph String
+parse :: String -> Map String (Set String)
 parse s = case readP_to_S full s of
             [(x, "")] -> x
             x -> error $ "Parse error: " ++ (show x)
@@ -42,7 +89,7 @@ parse s = case readP_to_S full s of
 
 
 
-threeCliques :: Graph String -> Set (Set String)
+threeCliques :: Map String (Set String) -> Set (Set String)
 threeCliques g = S.fromList $ do
     (s, e1) <- M.toList g
     (t:us) <- tails $ S.toList e1
@@ -51,31 +98,14 @@ threeCliques g = S.fromList $ do
     guard $ S.member u tn
     pure $ S.fromList [s, t, u]
 
-solve1 :: Graph String -> Int
+
+solve1 :: Map String (Set String) -> Int
 solve1 = S.size . S.filter (any ("t" `isPrefixOf`)) . threeCliques
 
-
--- finds all maximal cliques in a graph
-bronKerbosch :: Ord a => Graph a -> [Set a]
-bronKerbosch g = go S.empty (M.keysSet g) S.empty []
+solve2 :: Map String (Set String) -> String
+solve2 g = intercalate "," . last . sortBy (comparing length) $ maxes
   where
-    go r p x | S.null p = if S.null x then (r :) else id
-             | otherwise = scan (g M.! S.findMin p) r p x
-    scan pivotSet r p x = case S.minView p of
-        Nothing -> id
-        Just (v, p') -> top . scan pivotSet r p' (S.insert v x)
-          where
-            top | S.member v pivotSet = id
-                | otherwise = go (S.insert v r) nearP nearX
-            nearP = S.intersection p neighbors
-            nearX = S.intersection x neighbors
-            neighbors = g M.! v
-
-
-solve2 :: Graph String -> String
-solve2 = intercalate "," . S.toList . largest . bronKerbosch
-  where
-    largest = last . sortBy (comparing S.size)
+    maxes = maximalCliques (M.keysSet g) (\s t -> S.member s $ g M.! t)
 
 
 main :: IO ()
