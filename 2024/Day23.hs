@@ -60,16 +60,16 @@ bronKerbosch :: Ord a => Graph a -> [Set a]
 bronKerbosch g = go S.empty (M.keysSet g) S.empty []
   where
     go r p x | S.null p = if S.null x then (r :) else id
-             | otherwise = scan r p x (g M.! S.findMin p)
-    scan r p x pivotSet = case S.minView p of
+             | otherwise = scan (g M.! S.findMin p) r p x
+    scan pivotSet r p x = case S.minView p of
         Nothing -> id
-        Just (v, p') -> top . scan r p' (S.insert v x) pivotSet
+        Just (v, p') -> top . scan pivotSet r p' (S.insert v x)
           where
             top | S.member v pivotSet = id
                 | otherwise = go (S.insert v r) nearP nearX
-            nearP = S.intersection p nv
-            nearX = S.intersection x nv
-            nv = g M.! v
+            nearP = S.intersection p neighbors
+            nearX = S.intersection x neighbors
+            neighbors = g M.! v
 
 
 solve2 :: Graph String -> String
