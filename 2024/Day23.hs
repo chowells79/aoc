@@ -58,17 +58,16 @@ bronKerbosch
     -> [[Int]] -> [[Int]] -- ^ diffed maximal clique list
 bronKerbosch r p0 x0 = case IM.lookupMin p0 of
     Nothing -> if IS.null x0 then (r :) else id
-    Just (_, pivotSet) -> go p0 x0 $ IM.toList p0
+    Just (_, pivotSet) -> foldr step (const $ const id) (IM.toList p0) p0 x0
       where
-        go _ _ [] = id
-        go p x ((v, neighbors) : ls)
-            | IS.member v pivotSet = go p x ls
+        step (v, neighbors) loop p x
+            | IS.member v pivotSet = loop p x
             | otherwise = addV . skipV
           where
             addV = np `seq` nx `seq` bronKerbosch (v : r) np nx
             np = IM.restrictKeys p neighbors
             nx = IS.intersection x neighbors
-            skipV = p' `seq` x' `seq` go p' x' ls
+            skipV = p' `seq` x' `seq` loop p' x'
             p' = IM.delete v p
             x' = IS.insert v x
 
