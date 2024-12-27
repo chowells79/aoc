@@ -44,26 +44,33 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch id graph IS.empty []
         guard $ edge m n
         [ (i, IS.singleton j), (j, IS.singleton i) ]
 
+-- adapted from
+-- https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm with
+-- data structure choices modified for functionality. Avoid using
+-- (minBound :: Int) as a node identifier, or incorrect results will
+-- be produced. Prefer the maximalCliques wrapper whenever possible,
+-- as it will avoid that issue. It's also generally nicer to use
+-- anyway.
 bronKerbosch
-    :: ([Int] -> [Int]) -- ^ CPSed clique element accumulator
+    :: ([Int] -> [Int]) -- ^ diffed current clique element accumulator
     -> IntMap IntSet -- ^ unvisited nodes and their adjacency sets
     -> IntSet -- ^ excluded nodes, visited in earlier passes
-    -> [[Int]] -> [[Int]] -- ^ CPSed list of cliques
-bronKerbosch r p0 x0
-    | IM.null p0 = if IS.null x0 then (r [] :) else id
-    | otherwise = go p0 x0
-  where
-    pivotSet = snd $ IM.findMin p0
-    go p x = case IM.minViewWithKey p of
-        Nothing -> id
-        Just ((v, neighbors), p')
-            | IS.member v pivotSet -> go p' x
-            | otherwise -> addV . go p' (IS.insert v x)
+    -> [[Int]] -> [[Int]] -- ^ diffed maximal clique list
+bronKerbosch r p0 x0 = case IM.lookupMin p0 of
+    Nothing -> if IS.null x0 then (r [] :) else id
+    Just (_, pivotSet) -> go p0 x0 $ IM.toList p0
+      where
+        go _ _ [] = id
+        go p x ((v, neighbors) : ls)
+            | IS.member v pivotSet = go p x ls
+            | otherwise = addV . skipV
           where
-            addV = bronKerbosch (r . (v :)) nearP nearX
-            nearP = IM.restrictKeys p neighbors
-            nearX = IS.intersection x neighbors
-
+            addV = np `seq` nx `seq` bronKerbosch (r . (v :)) np nx
+            np = IM.restrictKeys p neighbors
+            nx = IS.intersection x neighbors
+            skipV = p' `seq` x' `seq` go p' x' ls
+            p' = IM.delete v p
+            x' = IS.insert v x
 
 
 
