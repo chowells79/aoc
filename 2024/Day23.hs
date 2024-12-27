@@ -46,11 +46,8 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 
 -- adapted from
 -- https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm with
--- data structure choices modified for functionality. Avoid using
--- (minBound :: Int) as a node identifier, or incorrect results will
--- be produced. Prefer the maximalCliques wrapper whenever possible,
--- as it will avoid that issue. It's also generally nicer to use
--- anyway.
+-- data structure choices modified for functionality. Prefer the maximalCliques
+-- wrapper whenever possible. It's generally nicer to use.
 bronKerbosch
     :: [Int] -- ^ current clique element accumulator
     -> IntMap IntSet -- ^ unvisited nodes and their adjacency sets
