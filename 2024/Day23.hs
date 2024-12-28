@@ -46,8 +46,9 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 
 -- adapted from
 -- https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm with
--- data structure choices modified for functionality. Prefer the maximalCliques
--- wrapper whenever possible. It's generally nicer to use.
+-- data structure choices modified for functionality. Prefer the
+-- maximalCliques wrapper whenever possible. It's generally nicer to
+-- use.
 bronKerbosch
     :: [Int] -- ^ current clique element accumulator
     -> IntMap IntSet -- ^ unvisited nodes and their adjacency sets
@@ -61,12 +62,14 @@ bronKerbosch r p0 x0 = case IM.lookupMin p0 of
             | IS.member v pivotSet = loop p x
             | otherwise = addV . skipV
           where
-            addV = np `seq` nx `seq` bronKerbosch (v : r) np nx
-            np = IM.restrictKeys p neighbors
-            nx = IS.intersection x neighbors
+            addV = p' `seq` x' `seq` bronKerbosch (v : r) p' x'
+              where
+                p' = IM.restrictKeys p neighbors
+                x' = IS.intersection x neighbors
             skipV = p' `seq` x' `seq` loop p' x'
-            p' = IM.delete v p
-            x' = IS.insert v x
+              where
+                p' = IM.delete v p
+                x' = IS.insert v x
 
 
 
