@@ -3,13 +3,8 @@
 build-depends: base, containers
 -}
 
-import Text.ParserCombinators.ReadP
-import Data.Char (isDigit)
-
-import Data.Bits (xor, shiftR, shiftL)
-
 import Data.List
-import Data.Maybe
+import Data.Bits (xor, shiftR, shiftL)
 
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as M
@@ -30,7 +25,7 @@ step x = third
     first = ((x `shiftL` 6) `xor` x) `rem` modulus
     second = ((first `shiftR` 5) `xor` first) `rem` modulus
     third = ((second `shiftL` 11) `xor` second) `rem` modulus
-    modulus = 16777216
+    modulus = 2^24
 
 solve1 :: [Int] -> Int
 solve1 = sum . map ((!! 2000) . iterate' step)
