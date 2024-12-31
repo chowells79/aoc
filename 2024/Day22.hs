@@ -12,9 +12,8 @@ import qualified Data.IntMap as M
 input :: Int -> IO String
 input n = readFile name
   where
-    name | n == 0 = "input/" ++ ident ++ ".txt"
-         | otherwise = "example/" ++ ident ++ "-" ++ show n ++ ".txt"
-    ident = "22"
+    name | n == 0 = "input/22.txt"
+         | otherwise = "example/22-" ++ show n ++ ".txt"
 
 step :: Int -> Int
 step x = third
