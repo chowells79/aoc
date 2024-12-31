@@ -16,9 +16,6 @@ input n = readFile name
          | otherwise = "example/" ++ ident ++ "-" ++ show n ++ ".txt"
     ident = "22"
 
-parse :: String -> [Int]
-parse = map read . words
-
 step :: Int -> Int
 step x = third
   where
@@ -54,6 +51,6 @@ solve2 monkeys = maximum bananas
 
 main :: IO ()
 main = do
-    inp <- parse <$> input 0
+    inp <- map read . words <$> input 0
     print $ solve1 inp
     print $ solve2 inp
