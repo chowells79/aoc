@@ -9,9 +9,8 @@ import Data.Char (isDigit)
 input :: Int -> IO String
 input n = readFile name
   where
-    name | n == 0 = "input/" ++ ident ++ ".txt"
-         | otherwise = "example/" ++ ident ++ "-" ++ show n ++ ".txt"
-    ident = "${id}"
+    name | n == 0 = "input/${id}.txt"
+         | otherwise = "example/${id}-" ++ show n ++ ".txt"
 
 parse :: String -> String
 parse s = case readP_to_S full s of
