@@ -4,7 +4,7 @@ build-depends: base, containers
 -}
 
 import Data.List
-import Data.Bits (xor, shiftR, shiftL)
+import Data.Bits
 
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as M
@@ -16,12 +16,9 @@ input n = readFile name
          | otherwise = "example/22-" ++ show n ++ ".txt"
 
 step :: Int -> Int
-step x = third
+step = roll 11 . roll (-5) . roll 6
   where
-    first = ((x `shiftL` 6) `xor` x) `rem` modulus
-    second = ((first `shiftR` 5) `xor` first) `rem` modulus
-    third = ((second `shiftL` 11) `xor` second) `rem` modulus
-    modulus = 2^24
+    roll d x = ((x `shift` d) `xor` x) .&. (1 `shiftL` 24 - 1)
 
 solve1 :: [Int] -> Int
 solve1 = sum . map ((!! 2000) . iterate' step)
@@ -39,7 +36,6 @@ monkeyTriggers x = addDeltas M.empty prices
             (10 + e - d) * 1000000
         m' = M.insertWith (const id) k e m
     addDeltas m _ = m
-
 
 solve2 :: [Int] -> Int
 solve2 monkeys = maximum bananas
