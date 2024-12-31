@@ -1,13 +1,13 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base, containers
+build-depends: base, unordered-containers
 -}
 
 import Data.List
 import Data.Bits
 
-import Data.IntMap (IntMap)
-import qualified Data.IntMap as M
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as M
 
 input :: Int -> IO String
 input n = readFile name
@@ -24,7 +24,7 @@ solve1 :: [Int] -> Int
 solve1 = sum . map ((!! 2000) . iterate' step)
 
 
-monkeyTriggers :: Int -> IntMap Int
+monkeyTriggers :: Int -> HashMap Int Int
 monkeyTriggers x = addDeltas M.empty prices
   where
     prices = map (`rem` 10) . take 2001 $ iterate' step x
@@ -41,7 +41,7 @@ solve2 :: [Int] -> Int
 solve2 monkeys = maximum bananas
   where
     triggers = map monkeyTriggers monkeys
-    bananas = M.unionsWith (+) triggers
+    bananas = foldl' (M.unionWith (+)) M.empty triggers
 
 
 main :: IO ()
