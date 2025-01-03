@@ -54,7 +54,17 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 -- Prefer the maximalCliques wrapper whenever possible. It's
 -- generally nicer to use.
 --
--- invariants:
+-- For the initial call:
+--
+-- 1. r should be []
+--
+-- 2. x0 should be IS.empty
+--
+-- 3. p0 should be an adjacency map for the graph. The keys of p0 are
+-- the nodes in the graph, and the value associated with each key is
+-- the set of nodes adjacent to that key.
+--
+-- invariants preserved over all recursive calls:
 --
 -- 1. the elements of r form a clique
 --
