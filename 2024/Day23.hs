@@ -49,6 +49,14 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 -- data structure choices modified for functionality. Prefer the
 -- maximalCliques wrapper whenever possible. It's generally nicer to
 -- use.
+--
+-- invariants:
+-- 1. the elements of r form a clique
+-- 2. the keys of p0 are disjoint from the elements of x0
+-- 3. the keys of p0 unioned with the elements of x0 make up all the neighbors
+--    of all elements of r
+-- 4. the elements in x0 have all been added to this specific r in previous
+--    recursive calls and do not need to be considered again
 bronKerbosch
     :: [Int] -- ^ current clique element accumulator
     -> IntMap IntSet -- ^ unvisited nodes and their adjacency sets
