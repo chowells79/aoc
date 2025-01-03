@@ -44,24 +44,28 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
         guard $ edge m n
         [ (i, IS.singleton j), (j, IS.singleton i) ]
 
--- adapted from
+-- A version of the Bron-Kerbosch algorithm adapted from
 -- https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm with
--- data structure choices modified for functionality. Prefer the
--- maximalCliques wrapper whenever possible. It's generally nicer to
--- use.
+-- data structure choices modified for functionality. Returns a
+-- difference list ([X] -> [X]) to allow efficiently concatenating
+-- result sublists and streaming consumption. Note that result order
+-- is not specified in any way.
+--
+-- Prefer the maximalCliques wrapper whenever possible. It's
+-- generally nicer to use.
 --
 -- invariants:
+--
 -- 1. the elements of r form a clique
+--
 -- 2. the keys of p0 are disjoint from the elements of x0
--- 3. the keys of p0 unioned with the elements of x0 make up all the neighbors
---    of all elements of r
--- 4. the elements in x0 have all been added to this specific r in previous
---    recursive calls and do not need to be considered again
-bronKerbosch
-    :: [Int] -- ^ current clique element accumulator
-    -> IntMap IntSet -- ^ unvisited nodes and their adjacency sets
-    -> IntSet -- ^ excluded nodes, visited in earlier passes
-    -> [[Int]] -> [[Int]] -- ^ diffed maximal clique list
+--
+-- 3. the keys of p0 unioned with the elements of x0 make up all the
+--    common neighors of all elements in r
+--
+-- 4. the elements in x0 have previously been explored as additions to
+--    r and do not need to be considered again
+bronKerbosch :: [Int] -> IntMap IntSet -> IntSet -> [[Int]] -> [[Int]]
 bronKerbosch r p0 x0 = case IM.lookupMin p0 of
     Nothing -> if IS.null x0 then (r :) else id
     Just (_, pivotSet) -> foldr step (const $ const id) (IM.toList p0) p0 x0
