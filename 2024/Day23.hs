@@ -54,6 +54,7 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 -- Prefer the maximalCliques wrapper whenever possible. It's
 -- generally nicer to use.
 --
+--
 -- Initial conditions:
 --
 -- 1. r should be []
@@ -64,6 +65,7 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 --    the nodes in the graph, and the value associated with each key
 --    is the set of nodes adjacent to that key.
 --
+--
 -- Invariants preserved over all recursive calls:
 --
 -- 1. the elements of r form a clique
@@ -73,8 +75,24 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 -- 3. the keys of p0 unioned with the elements of x0 make up all the
 --    common neighbors of all elements in r
 --
--- 4. the elements in x0 have previously been explored as additions to
---    r and do not need to be considered again
+-- 4. the elements in x0 are neighbors of all elements in r that have
+--    have been added to r earlier in the algorithm
+--
+--
+-- Notes:
+--
+-- 1. as long as p0 or x0 are non-empty, r is not a maximal clique.
+--
+-- 2. if x0 is non-empty when p0 is empty, it means r is non-maximal
+--    but all maximal expansions of it have already been
+--    produced. Further exploration and production of results is
+--    inhibited.
+--
+-- 3. The pivot set is used to reduce recursive calls that will
+--    eventually be inhibited. Direct recursive calls are skipped for
+--    a subset of elements that will be encountered in indirect
+--    recursive calls as neighbors of some element that will be
+--    recursively considered.
 bronKerbosch :: [Int] -> IntMap IntSet -> IntSet -> [[Int]] -> [[Int]]
 bronKerbosch r p0 x0 = case IM.lookupMin p0 of
     Nothing -> if IS.null x0 then (r :) else id
