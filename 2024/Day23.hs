@@ -71,7 +71,7 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 -- 2. the keys of p0 are disjoint from the elements of x0
 --
 -- 3. the keys of p0 unioned with the elements of x0 make up all the
---    common neighors of all elements in r
+--    common neighbors of all elements in r
 --
 -- 4. the elements in x0 have previously been explored as additions to
 --    r and do not need to be considered again
