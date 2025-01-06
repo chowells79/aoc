@@ -69,42 +69,40 @@ wireUp (labels, gates) = result
 
 
 solve2 :: Circuit -> Int
-solve2 = foldr' (\a b -> 2 * b + a) 0 . map fst . output . wireUp
+solve2 = toInt . output . wireUp
+
+toInt :: [(Int, a)] -> Int
+toInt = foldr' (\a b -> 2 * b + a) 0 . map fst
 
 output :: Map Label (Int, Set Label) -> [(Int, Set Label)]
 output = toList . snd . M.split "z"
 
 add :: Circuit -> [Int] -> [Int] -> Map Label (Int, Set Label)
-add (l, gates) is js = wireUp (xs ++ ys, gates)
+add (_, gates) is js = wireUp (xs ++ ys, gates)
   where
     xs = [ (printf "x%02d" x, min 1 i) | (x, i) <- zip [0 :: Int ..] is ]
     ys = [ (printf "y%02d" y, min 1 j) | (y, j) <- zip [0 :: Int ..] js ]
+
+addZ :: Int -> Circuit -> Int -> Int -> Map Label (Int, Set Label)
+addZ n c i j = add c (take n $ go i) (take n $ go j)
+  where
+    go x = case x `quotRem` 2 of (q, r) -> r : go q
+
+
+runner :: [(Int, Set Label)] -> [(Int, Set Label)]
+runner = go 0 S.empty . zip [0..]
+    where
+      go _ _ [] = []
+      go r seen ((i, (x, g)):xs) = (r', s' S.\\ seen) : go r' s' xs
+        where
+          r' = r + x * 2 ^ i
+          s' = S.union seen g
 
 
 explore :: Int -> Circuit -> ()
 explore n c = go 0
   where
-    zero = take n $ repeat 0
-
-    set i [] = []
-    set 0 (_:xs) = 1 : xs
-    set i (x:xs) = x : set (i - 1) xs
-
-    go i | i == n = undefined
-         | otherwise = undefined
-      where
-        one = set i zero
-        eleven = set (i + 1) (set i zero)
-        cases = [ add c zero zero
-                , add c zero one
-                , add c one zero
-                -- , add c one one
-                -- , add c one eleven
-                -- , add c eleven one
-                -- , add c eleven eleven
-                ]
-        r m j = m M.! printf "%02d" j
-
+    go = undefined
 
 
 
