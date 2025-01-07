@@ -4,6 +4,8 @@ build-depends: base, containers, psqueues, hashable
 -}
 {-# Language DeriveAnyClass, DeriveFunctor, DeriveGeneric #-}
 
+import Data.Bifunctor (first)
+
 import Data.Set (Set)
 import qualified Data.Set as S
 
@@ -63,10 +65,8 @@ explore (s, _, open) = go universe
         Just (now, cost, visited, queue') -> (cost, visited') : go queue''
           where
             visited' = S.insert (fst now) visited
-            queue'' = foldl' combine queue'
-                      [ (fmap (+ c) cost, next)
-                      | (c, next) <- moves now
-                      ]
+            queue'' = foldl' combine queue' $ first addCost <$> moves now
+            addCost c = fmap (+ c) cost
             combine q (p, k) = snd $ P.alter ((,) () . fmap dec) k q
               where
                 dec (p', v')
