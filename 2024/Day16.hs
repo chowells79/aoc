@@ -88,6 +88,6 @@ solve m@(_, e, _) = (minCost, count)
 main :: IO ()
 main = do
     maze <- parse <$> input 0
-    let (part1, part2) = solve maze
+    let (Finite part1, part2) = solve maze
     print part1
     print part2
