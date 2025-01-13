@@ -27,15 +27,17 @@ import qualified Data.IntMap.Strict as IM
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
 
--- | Returns a list of all maximal cliques in the input graph. Neither
--- the cliques nor the elements within each clique are returned in any
--- particular order.
+-- | Returns a list of all maximal cliques in the input graph. Output
+-- order follows the traversal order of the input collection. Each
+-- clique's nodes are in the order they are pulled from the
+-- collection, and output cliques are lexicographically ordered by the
+-- collection order of their elements.
 maximalCliques
     :: Foldable f
     => f a -- ^ a collection of all nodes in the graph
     -> (a -> a -> Bool) -- ^ whether an edge exists between two nodes
     -> [[a]]
-maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
+maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch id graph IS.empty []
   where
     ns = IM.fromList $ zip [0..] (toList nodes)
     graph = IM.fromListWith IS.union $ do
@@ -48,16 +50,18 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 -- https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm with
 -- data structure choices modified for functionality. Returns a
 -- difference list ([X] -> [X]) to allow efficiently concatenating
--- result sublists and streaming consumption. Note that result order
--- is not specified in any way.
+-- result sublists and streaming consumption.
 --
 -- Prefer the maximalCliques wrapper whenever possible. It's
 -- generally nicer to use.
 --
+-- The r argument is also a difference list. Comments about its
+-- contents within this documentation will presume it is applied to []
+-- to generate a list.
 --
 -- Initial conditions:
 --
--- 1. r should be []
+-- 1. r should be id
 --
 -- 2. x0 should be IS.empty
 --
@@ -88,21 +92,30 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch [] graph IS.empty []
 --    produced. Further exploration and production of results is
 --    inhibited.
 --
--- 3. The pivot set is used to reduce recursive calls that will
---    eventually be inhibited. Direct recursive calls are skipped for
---    a subset of elements that will be encountered in indirect
---    recursive calls as neighbors of some element that will be
---    recursively considered.
-bronKerbosch :: [Int] -> IntMap IntSet -> IntSet -> [[Int]] -> [[Int]]
+--
+-- Explanation:
+--
+-- 1. Without the x0 parameter or removing elements from p0, this
+--    would be a simple recursive search. Too simple. It would return
+--    every maximal clique k! times, where k is the number of elements
+--    in the clique.
+--
+-- 2. Removing elements from p0 without introducing x0 prevents
+--    duplicate results from being produced, but introduces
+--    non-maximal cliques into the output.
+--
+-- 3. Adding x0 allows inhibiting the output of non-maximal cliques,
+--    as it provides a way to detect that the generated clique isn't
+--    maximal.
+bronKerbosch
+    :: ([Int] -> [Int]) -> IntMap IntSet -> IntSet -> [[Int]] -> [[Int]]
 bronKerbosch r p0 x0 = case IM.lookupMin p0 of
-    Nothing -> if IS.null x0 then (r :) else id
-    Just (_, pivotSet) -> foldr step (const $ const id) (IM.toList p0) p0 x0
+    Nothing -> if IS.null x0 then (r [] :) else id
+    Just _ -> foldr step (const $ const id) (IM.toList p0) p0 x0
       where
-        step (v, neighbors) loop p x
-            | IS.member v pivotSet = loop p x
-            | otherwise = addV . skipV
+        step (v, neighbors) loop p x = addV . skipV
           where
-            addV = p' `seq` x' `seq` bronKerbosch (v : r) p' x'
+            addV = p' `seq` x' `seq` bronKerbosch (r . (v :)) p' x'
               where
                 p' = IM.restrictKeys p neighbors
                 x' = IS.intersection x neighbors
@@ -149,7 +162,7 @@ solve1 :: Map String (Set String) -> Int
 solve1 = S.size . S.filter (any ("t" `isPrefixOf`)) . threeCliques
 
 solve2 :: Map String (Set String) -> String
-solve2 g = intercalate "," . sort . last . sortBy (comparing length) $ maxes
+solve2 g = intercalate "," . last . sortBy (comparing length) $ maxes
   where
     maxes = maximalCliques (M.keysSet g) (\s t -> S.member s $ g M.! t)
 
