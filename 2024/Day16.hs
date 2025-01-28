@@ -1,18 +1,16 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base, containers, psqueues, hashable
+build-depends: base, containers, psqueues
 -}
-{-# Language DeriveAnyClass, DeriveFunctor, DeriveGeneric #-}
 
 import Data.Bifunctor (first)
+
+import Data.Maybe (listToMaybe)
 
 import Data.Set (Set)
 import qualified Data.Set as S
 
-import qualified Data.HashPSQ as P
-
-import GHC.Generics (Generic)
-import Data.Hashable (Hashable)
+import qualified Data.OrdPSQ as P
 
 input :: Int -> IO String
 input n = readFile name
@@ -34,7 +32,7 @@ parse s = (start, end, open)
     start = fst . head . filter ((== 'S') . snd) $ raw
     end = fst . head . filter ((== 'E') . snd) $ raw
 
-data Dir = N | E | S | W deriving (Eq, Ord, Show, Generic, Hashable)
+data Dir = N | E | S | W deriving (Eq, Ord, Show)
 
 foldDir :: a -> a -> a -> a -> Dir -> a
 foldDir a b c d dir = case dir of { N -> a ; E -> b ; S -> c ; W -> d }
@@ -50,9 +48,9 @@ moves (l@(r, c), d) =
   where
     forward = foldDir (r - 1, c) (r, c + 1) (r + 1, c) (r, c - 1) d
 
-data Infinite a = Finite a | Infinity deriving (Eq, Ord, Show, Functor)
+data Infinite a = Finite a | Infinity deriving (Eq, Ord, Show)
 
-explore :: Maze -> [(Infinite Int, Set (Int, Int))]
+explore :: Maze -> [(Int, Set (Int, Int))]
 explore (s, _, open) = go universe
   where
     universe = P.insert (s, E) (Finite 0) S.empty $ P.fromList
@@ -61,33 +59,39 @@ explore (s, _, open) = go universe
                , d <- [N, E, S, W]
                ]
     go queue = case P.minView queue of
-        Nothing -> []
-        Just (now, cost, visited, queue') -> (cost, visited') : go queue''
+        Just (now, Finite cost, visited, queue') ->
+            (cost, visited') : go queue''
           where
             visited' = S.insert (fst now) visited
-            queue'' = foldl' combine queue' $ first addCost <$> moves now
-            addCost c = fmap (+ c) cost
+            queue'' = foldl' combine queue' newPaths
             combine q (p, k) = snd $ P.alter ((,) () . fmap dec) k q
               where
                 dec (p', v')
                     | p < p' = (p, visited')
                     | p == p' = (p, S.union v' visited')
                     | otherwise = (p', v')
+            newPaths = first (Finite . (+ cost)) <$> moves now
+        _ -> []
 
 
-solve :: Maze -> (Infinite Int, Int)
-solve m@(_, e, _) = (minCost, count)
-  where
-    all = explore m
-    found = dropWhile (S.notMember e . snd) all
-    minCost = fst $ head found
-    count = S.size . S.unions . filter (S.member e) . map snd .
-            takeWhile ((== minCost) . fst) $ found
+solve :: Maze -> Maybe (Int, Int)
+solve m@(_, e, _) = do
+    let reachable = explore m
+        found = dropWhile (S.notMember e . snd) reachable
+
+    minCost <- fst <$> listToMaybe found
+
+    let count = S.size . S.unions . filter (S.member e) . map snd .
+                takeWhile ((== minCost) . fst) $ found
+
+    count `seq` pure (minCost, count)
 
 
 main :: IO ()
 main = do
     maze <- parse <$> input 0
-    let (Finite part1, part2) = solve maze
-    print part1
-    print part2
+    case solve maze of
+        Nothing -> putStrLn "unsolvable - no path to finish"
+        Just (part1, part2) -> do
+            print part1
+            print part2
