@@ -81,8 +81,8 @@ solve m@(_, e, _) = do
 
     minCost <- fst <$> listToMaybe found
 
-    let count = S.size . S.unions . filter (S.member e) . map snd .
-                takeWhile ((== minCost) . fst) $ found
+    let sameCost = takeWhile ((== minCost) . fst) found
+        count = S.size . S.unions . filter (S.member e) . map snd $ sameCost
 
     count `seq` pure (minCost, count)
 
