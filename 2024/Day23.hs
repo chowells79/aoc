@@ -3,6 +3,10 @@
 build-depends: base, containers
 -}
 
+
+{-# Language BangPatterns #-}
+
+
 import Data.List (intercalate, isPrefixOf, sort, sortBy)
 import Data.Ord (comparing)
 
@@ -115,14 +119,14 @@ bronKerbosch r p0 x0
   where
     step (v, neighbors) continue p x = vAdded . vSkipped
       where
-        vAdded = p' `seq` x' `seq` bronKerbosch (r . (v :)) p' x'
+        vAdded = bronKerbosch (r . (v :)) p' x'
           where
-            p' = IM.restrictKeys p neighbors
-            x' = IS.intersection x neighbors
-        vSkipped = p' `seq` x' `seq` continue p' x'
+            !p' = IM.restrictKeys p neighbors
+            !x' = IS.intersection x neighbors
+        vSkipped = continue p' x'
           where
-            p' = IM.delete v p
-            x' = IS.insert v x
+            !p' = IM.delete v p
+            !x' = IS.insert v x
 
 
 
