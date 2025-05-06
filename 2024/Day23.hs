@@ -109,20 +109,20 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch id graph IS.empty []
 --    maximal.
 bronKerbosch
     :: ([Int] -> [Int]) -> IntMap IntSet -> IntSet -> [[Int]] -> [[Int]]
-bronKerbosch r p0 x0 = case IM.lookupMin p0 of
-    Nothing -> if IS.null x0 then (r [] :) else id
-    Just _ -> foldr step (const $ const id) (IM.toList p0) p0 x0
+bronKerbosch r p0 x0
+    | IM.null p0 = if IS.null x0 then (r [] :) else id
+    | otherwise = foldr step (const $ const id) (IM.toList p0) p0 x0
+  where
+    step (v, neighbors) continue p x = vAdded . vSkipped
       where
-        step (v, neighbors) loop p x = addV . skipV
+        vAdded = p' `seq` x' `seq` bronKerbosch (r . (v :)) p' x'
           where
-            addV = p' `seq` x' `seq` bronKerbosch (r . (v :)) p' x'
-              where
-                p' = IM.restrictKeys p neighbors
-                x' = IS.intersection x neighbors
-            skipV = p' `seq` x' `seq` loop p' x'
-              where
-                p' = IM.delete v p
-                x' = IS.insert v x
+            p' = IM.restrictKeys p neighbors
+            x' = IS.intersection x neighbors
+        vSkipped = p' `seq` x' `seq` continue p' x'
+          where
+            p' = IM.delete v p
+            x' = IS.insert v x
 
 
 
