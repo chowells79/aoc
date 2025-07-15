@@ -31,23 +31,26 @@ import qualified Data.IntMap.Strict as IM
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
 
--- | Returns a list of all maximal cliques in the input graph. Output
--- order follows the traversal order of the input collection. Each
--- clique's nodes are in the order they are pulled from the
--- collection, and output cliques are lexicographically ordered by the
--- collection order of their elements.
+-- | Returns a list of all maximal cliques in an undirected
+-- graph. Output order follows the traversal order of the input
+-- collection. Each clique's nodes are in the order they are pulled
+-- from the collection, and output cliques are lexicographically
+-- ordered by the collection order of their elements.
 maximalCliques
     :: Foldable f
     => f a -- ^ a collection of all nodes in the graph
-    -> (a -> a -> Bool) -- ^ whether an edge exists between two nodes
+    -> (a -> a -> Bool) -- ^ whether an edge exists between two
+                        -- nodes. This function should be symmetric
+                        -- for an undirected graph.
     -> [[a]]
-maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch id graph IS.empty []
+maximalCliques nodes hasEdge =
+    map (ns IM.!) <$> bronKerbosch id graph IS.empty []
   where
     ns = IM.fromList $ zip [0..] (toList nodes)
     graph = IM.fromListWith IS.union $ do
         ((i, m):jns) <- tails $ IM.toList ns
         (j, n) <- jns
-        guard $ edge m n
+        guard $ hasEdge m n
         [ (i, IS.singleton j), (j, IS.singleton i) ]
 
 -- A version of the Bron-Kerbosch algorithm adapted from
