@@ -2,6 +2,7 @@
 {- cabal:
 build-depends: base
 -}
+{-# Language BangPatterns #-}
 
 import Text.ParserCombinators.ReadP
 import Data.Char (isDigit)
@@ -16,7 +17,7 @@ input n = readFile name
 
 parse :: String -> [Int]
 parse s = case readP_to_S full s of
-            [(x, "")] -> scanl' (+) 50 x
+            [(x, "")] -> x
             x -> error $ "Parse error: " ++ (show x)
   where
     full = some line <* eof
@@ -26,24 +27,26 @@ parse s = case readP_to_S full s of
     line = dir <*> num <* char '\n'
 
 
+start, size :: Int
+start = 50
+size = 100
+
 solve1 :: [Int] -> Int
-solve1 = length . filter (== 0) . map (`mod` 100)
-
-
-expand :: [Int] -> [Int]
-expand (x:xs@(y:_)) = run ++ expand xs
-  where
-    run | x < y = [x, x + 1 .. y - 1]
-        | x > y = [x, x - 1 .. y + 1]
-        | otherwise = []
-expand z = z
+solve1 = length . filter (== 0) . map (`mod` size)
 
 solve2 :: [Int] -> Int
-solve2 = solve1 . expand
+solve2 xs = foldl' (+) 0 $ zipWith zeroes xs (drop 1 xs)
 
+zeroes :: Int -> Int -> Int
+zeroes src dst
+    | src > dst = zeroes dst src - atZero src + atZero dst
+    | otherwise = (dst - src) `div` size + extra
+  where
+    atZero x = if x `mod` size == 0 then 1 else 0
+    extra = if (dst `mod` size) < (src `mod` size) then 1 else 0
 
 main :: IO ()
 main = do
-    inp <- parse <$> input 0
-    print $ solve1 inp
-    print $ solve2 inp
+    points <- scanl' (+) start . parse <$> input 0
+    print $ solve1 points
+    print $ solve2 points
