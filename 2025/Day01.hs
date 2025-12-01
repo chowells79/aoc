@@ -30,19 +30,23 @@ start, size :: Int
 start = 50
 size = 100
 
+
 solve1 :: [Int] -> Int
-solve1 = length . filter (== 0) . map (`mod` size)
+solve1 = sum . map zero
+
+zero :: Int -> Int
+zero x = fromEnum $ x `mod` size == 0
+
 
 solve2 :: [Int] -> Int
-solve2 xs = foldl' (+) 0 $ zipWith zeroes xs (drop 1 xs)
+solve2 xs = sum $ zipWith zeroes xs (drop 1 xs)
 
 zeroes :: Int -> Int -> Int
 zeroes from to
-    | from > to = zeroes to from - atZero from + atZero to
+    | from > to = zeroes to from - zero from + zero to
     | otherwise = (to - from) `div` size + extra
   where
-    atZero x = if x `mod` size == 0 then 1 else 0
-    extra = if (to `mod` size) < (from `mod` size) then 1 else 0
+    extra = fromEnum $ (to `mod` size) < (from `mod` size)
 
 
 main :: IO ()
