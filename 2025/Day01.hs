@@ -6,7 +6,6 @@ build-depends: base
 
 import Text.ParserCombinators.ReadP
 import Data.Char (isDigit)
-import Control.Applicative
 import Data.List
 
 input :: Int -> IO String
@@ -20,9 +19,9 @@ parse s = case readP_to_S full s of
             [(x, "")] -> x
             x -> error $ "Parse error: " ++ (show x)
   where
-    full = some line <* eof
+    full = many line <* eof
 
-    dir = id <$ char 'L' <|> negate <$ char 'R'
+    dir = (id <$ char 'L') +++ (negate <$ char 'R')
     num = read <$> munch1 isDigit
     line = dir <*> num <* char '\n'
 
@@ -38,12 +37,13 @@ solve2 :: [Int] -> Int
 solve2 xs = foldl' (+) 0 $ zipWith zeroes xs (drop 1 xs)
 
 zeroes :: Int -> Int -> Int
-zeroes src dst
-    | src > dst = zeroes dst src - atZero src + atZero dst
-    | otherwise = (dst - src) `div` size + extra
+zeroes from to
+    | from > to = zeroes to from - atZero from + atZero to
+    | otherwise = (to - from) `div` size + extra
   where
     atZero x = if x `mod` size == 0 then 1 else 0
-    extra = if (dst `mod` size) < (src `mod` size) then 1 else 0
+    extra = if (to `mod` size) < (from `mod` size) then 1 else 0
+
 
 main :: IO ()
 main = do
