@@ -2,8 +2,6 @@
 {- cabal:
 build-depends: base
 -}
-{-# Language BangPatterns #-}
-
 import Text.ParserCombinators.ReadP
 import Data.Char (isDigit)
 import Data.List
