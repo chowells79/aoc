@@ -23,7 +23,7 @@ parse s = case readP_to_S full s of
 
     dir = id <$ char 'L' <|> negate <$ char 'R'
     num = read <$> munch1 isDigit
-    line = dir <*> num <* skipSpaces
+    line = dir <*> num <* char '\n'
 
 
 solve1 :: [Int] -> Int
