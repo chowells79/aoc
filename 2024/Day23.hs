@@ -3,6 +3,10 @@
 build-depends: base, containers
 -}
 
+
+{-# Language BangPatterns #-}
+
+
 import Data.List (intercalate, isPrefixOf, sort, sortBy)
 import Data.Ord (comparing)
 
@@ -27,23 +31,26 @@ import qualified Data.IntMap.Strict as IM
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
 
--- | Returns a list of all maximal cliques in the input graph. Output
--- order follows the traversal order of the input collection. Each
--- clique's nodes are in the order they are pulled from the
--- collection, and output cliques are lexicographically ordered by the
--- collection order of their elements.
+-- | Returns a list of all maximal cliques in an undirected
+-- graph. Output order follows the traversal order of the input
+-- collection. Each clique's nodes are in the order they are pulled
+-- from the collection, and output cliques are lexicographically
+-- ordered by the collection order of their elements.
 maximalCliques
     :: Foldable f
     => f a -- ^ a collection of all nodes in the graph
-    -> (a -> a -> Bool) -- ^ whether an edge exists between two nodes
+    -> (a -> a -> Bool) -- ^ whether an edge exists between two
+                        -- nodes. This function should be symmetric
+                        -- for an undirected graph.
     -> [[a]]
-maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch id graph IS.empty []
+maximalCliques nodes hasEdge =
+    map (ns IM.!) <$> bronKerbosch id graph IS.empty []
   where
     ns = IM.fromList $ zip [0..] (toList nodes)
     graph = IM.fromListWith IS.union $ do
         ((i, m):jns) <- tails $ IM.toList ns
         (j, n) <- jns
-        guard $ edge m n
+        guard $ hasEdge m n
         [ (i, IS.singleton j), (j, IS.singleton i) ]
 
 -- A version of the Bron-Kerbosch algorithm adapted from
@@ -109,20 +116,20 @@ maximalCliques nodes edge = map (ns IM.!) <$> bronKerbosch id graph IS.empty []
 --    maximal.
 bronKerbosch
     :: ([Int] -> [Int]) -> IntMap IntSet -> IntSet -> [[Int]] -> [[Int]]
-bronKerbosch r p0 x0 = case IM.lookupMin p0 of
-    Nothing -> if IS.null x0 then (r [] :) else id
-    Just _ -> foldr step (const $ const id) (IM.toList p0) p0 x0
+bronKerbosch r p0 x0
+    | IM.null p0 = if IS.null x0 then (r [] :) else id
+    | otherwise = foldr step (const $ const id) (IM.toList p0) p0 x0
+  where
+    step (v, neighbors) continue p x = vAdded . vSkipped
       where
-        step (v, neighbors) loop p x = addV . skipV
+        vAdded = bronKerbosch (r . (v :)) p' x'
           where
-            addV = p' `seq` x' `seq` bronKerbosch (r . (v :)) p' x'
-              where
-                p' = IM.restrictKeys p neighbors
-                x' = IS.intersection x neighbors
-            skipV = p' `seq` x' `seq` loop p' x'
-              where
-                p' = IM.delete v p
-                x' = IS.insert v x
+            !p' = IM.restrictKeys p neighbors
+            !x' = IS.intersection x neighbors
+        vSkipped = continue p' x'
+          where
+            !p' = IM.delete v p
+            !x' = IS.insert v x
 
 
 
