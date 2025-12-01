@@ -19,7 +19,7 @@ parse s = case readP_to_S full s of
   where
     full = many line <* eof
 
-    dir = (id <$ char 'L') +++ (negate <$ char 'R')
+    dir = (negate <$ char 'L') +++ (id <$ char 'R')
     num = read <$> munch1 isDigit
     line = dir <*> num <* char '\n'
 
