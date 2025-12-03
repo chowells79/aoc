@@ -1,9 +1,9 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base
+build-depends: base, utility-ht
 -}
 
-import Data.List
+import Data.List.HT
 
 input :: Int -> IO String
 input n = readFile name
@@ -11,31 +11,24 @@ input n = readFile name
     name | n == 0 = "input/03.txt"
          | otherwise = "example/03-" ++ show n ++ ".txt"
 
-parse :: String -> [[Int]]
-parse s = map (read . pure) <$> lines s
+solve :: Int -> [String] -> Int
+solve n = sum . map (read . maxSubsequence n)
 
-solve1 :: [[Int]] -> Int
-solve1 = sum . map maxJolt
+-- Explodes if you call it with a count greater than the length of the
+-- list. Don't do that.
+maxSubsequence :: Ord a => Int -> [a] -> [a]
+maxSubsequence c = go c . countDown
   where
-    maxJolt xs = maximum [ 10 * a + b | (a:as) <- tails xs, b <- as ]
-
-solve2 :: [[Int]] -> Int
-solve2 = sum . map maxUnsafeJolt
-
-maxUnsafeJolt :: [Int] -> Int
-maxUnsafeJolt = uncurry go . splitAt 12
-  where
-    go current [] = read . concat . map show $ current
-    go current (x:xs) = go (maximum candidates) xs
+    go 0 _ = []
+    go n xs = y : go (n - 1) ys
       where
-        candidates = dels (current ++ [x])
+        ((y, _):ys) = maximum . takeUntil ((== n) . snd . head) . tails $ xs
 
-dels :: [a] -> [[a]]
-dels [] = []
-dels (x:xs) = xs : map (x:) (dels xs)
+countDown :: [a] -> [(a, Int)]
+countDown xs = let len = length xs in zip xs [len, len - 1 ..]
 
 main :: IO ()
 main = do
-    inp <- parse <$> input 0
-    print $ solve1 inp
-    print $ solve2 inp
+    inp <- lines <$> input 0
+    print $ solve 2 inp
+    print $ solve 12 inp
