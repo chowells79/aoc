@@ -24,10 +24,9 @@ neighbors p@(r, c) = filter (/= p)
     [ (r', c') | r' <- [r - 1 .. r + 1], c' <- [c - 1 .. c + 1] ]
 
 accessible :: Set (Int, Int) -> Set (Int, Int)
-accessible s = S.fromList [ p
-                          | p <- S.toList s
-                          , length (filter (`S.member` s) (neighbors p)) < 4
-                          ]
+accessible s = S.filter fewNeighbors s
+  where
+    fewNeighbors p = length (filter (`S.member` s) (neighbors p)) < 4
 
 solve1 :: Set (Int, Int) -> Int
 solve1 = S.size . accessible
