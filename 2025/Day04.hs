@@ -28,17 +28,15 @@ accessible s = S.filter fewNeighbors s
   where
     fewNeighbors p = length (filter (`S.member` s) (neighbors p)) < 4
 
+
 solve1 :: Set (Int, Int) -> Int
 solve1 = S.size . accessible
 
-
 solve2 :: Set (Int, Int) -> Int
-solve2 = sum . map S.size . go
+solve2 = sum . map S.size . takeWhile (not . S.null) . go
   where
-    go s = a : if S.null a then [] else go s'
-      where
-        a = accessible s
-        s' = s `S.difference` a
+    go s = let a = accessible s in a : go (S.difference s a)
+
 
 main :: IO ()
 main = do
