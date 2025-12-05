@@ -33,12 +33,11 @@ solve1 (ranges, ids) = length (filter inRange ids)
     inRange x = or [ l <= x && x <= h | (l, h) <- ranges ]
 
 solve2 :: Input -> Int
-solve2 (ranges, _) = go 0 0 (sort ranges)
+solve2 (ranges, _) = fst $ foldl' addRange (0, 0) (sort ranges)
   where
-    go !x _ [] = x
-    go !x i ((nextL, nextH):rest)
-        | nextH < i = go x i rest
-        | otherwise = go (x + nextH - max i nextL + 1) (nextH + 1) rest
+    addRange (!x, !i) (nextL, nextH)
+        | nextH < i = (x, i)
+        | otherwise = (x + nextH - max i nextL + 1, nextH + 1)
 
 main :: IO ()
 main = do
