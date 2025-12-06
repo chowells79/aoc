@@ -2,11 +2,9 @@
 {- cabal:
 build-depends: base, split
 -}
-
 import Data.Char (isDigit)
 import Data.List (transpose)
 import Data.List.Split (wordsBy)
-
 
 input :: Int -> IO String
 input n = readFile name
