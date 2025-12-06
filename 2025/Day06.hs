@@ -2,6 +2,8 @@
 {- cabal:
 build-depends: base, split
 -}
+{-# Language LambdaCase #-}
+
 import Data.Char (isDigit)
 import Data.List (transpose)
 import Data.List.Split (wordsBy)
@@ -26,10 +28,7 @@ parse2 s = zip (words opRow) nums
     nums = map (map read) . wordsBy null . map (filter isDigit) $ cephLines
 
 solve :: [(String, [Int])] -> Int
-solve = sum . map (uncurry perform)
-  where
-    perform "*" = product
-    perform "+" = sum
+solve = sum . map (uncurry $ \case "*" -> product ; "+" -> sum)
 
 main :: IO ()
 main = do
