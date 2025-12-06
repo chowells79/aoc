@@ -18,14 +18,14 @@ parse1 :: String -> [(String, [Int])]
 parse1 s = zip ops nums
   where
     (ops:numRows) = map words . reverse . lines $ s
-    nums = transpose . map (map read) $ reverse numRows
+    nums = map (map read) . transpose $ reverse numRows
 
 parse2 :: String -> [(String, [Int])]
 parse2 s = zip (words opRow) nums
   where
     (opRow:numRows) = reverse $ lines s
-    cephLines = transpose $ reverse numRows
-    nums = map (map read) . wordsBy null . map (filter isDigit) $ cephLines
+    nums = map (map read) . groupNums . transpose $ reverse numRows
+    groupNums = wordsBy null . map (filter isDigit)
 
 solve :: [(String, [Int])] -> Int
 solve = sum . map (uncurry $ \case "*" -> product ; "+" -> sum)
