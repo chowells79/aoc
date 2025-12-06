@@ -14,38 +14,24 @@ input n = readFile name
     name | n == 0 = "input/06.txt"
          | otherwise = "example/06-" ++ show n ++ ".txt"
 
-data Op = Add | Mul deriving (Eq, Ord, Show)
-
-parse1 :: String -> [(Op, [Int])]
+parse1 :: String -> [(String, [Int])]
 parse1 s = zip ops nums
   where
-    (opRow:numRows) = map words . reverse . lines $ s
-    nums =
-        transpose .
-        map (map read) $
-        reverse numRows
-    ops = map (\x -> case x of "+" -> Add ; "*" -> Mul) opRow
+    (ops:numRows) = map words . reverse . lines $ s
+    nums = transpose . map (map read) $ reverse numRows
 
-perform :: Op -> [Int] -> Int
-perform Mul = product
-perform Add = sum
-
-solve :: [(Op, [Int])] -> Int
-solve = sum . map (uncurry perform)
-
-
-parse2 :: String -> [(Op, [Int])]
-parse2 s = zip ops nums
+parse2 :: String -> [(String, [Int])]
+parse2 s = zip (words opRow) nums
   where
     (opRow:numRows) = reverse $ lines s
-    nums =
-        map (map read) .
-        wordsBy (== "") .
-        map (filter isDigit) .
-        transpose $
-        reverse numRows
-    ops = map (\x -> case x of "+" -> Add ; "*" -> Mul) . words $ opRow
+    cephLines = transpose $ reverse numRows
+    nums = map (map read) . wordsBy null . map (filter isDigit) $ cephLines
 
+solve :: [(String, [Int])] -> Int
+solve = sum . map (uncurry perform)
+  where
+    perform "*" = product
+    perform "+" = sum
 
 main :: IO ()
 main = do
