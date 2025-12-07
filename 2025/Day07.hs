@@ -28,9 +28,9 @@ parse s = (starts, filter (not . S.null) splitters)
 
 
 solve :: Set Int -> [Set Int] -> (Int, Int)
-solve startSet splitterRows = (splittersHit, routeCount)
+solve startSet splitterRows = (splittersUsed, routeCount)
   where
-    !splittersHit = sum $ map M.size hitCounts
+    !splittersUsed = sum $ map M.size hitCounts
     !routeCount = sum finalCounts
 
     (finalCounts, hitCounts) = mapAccumL step startCounts splitterRows
