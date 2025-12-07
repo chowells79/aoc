@@ -4,6 +4,7 @@ build-depends: base, containers
 -}
 {-# Language BangPatterns #-}
 
+import Data.Bitraversable (firstA)
 import Data.List (elemIndices, mapAccumL)
 
 import Data.Set (Set)
@@ -31,20 +32,15 @@ parse s = (starts, filter (not . S.null) splitters)
 solve :: Input -> (Int, Int)
 solve (starts, splitters) = (hitCount, routeCount)
   where
-    !hitCount = sum $ map S.size hits
-    (final, hits) = mapAccumL collide starts splitters
+    !hitCount = sum $ map M.size hits
+    !routeCount = sum final
+    (final, hits) = mapAccumL collide (M.fromSet (const 1) starts) splitters
     collide input splits = (next, hit)
       where
-        !next = S.union continuing new
-        hit = S.intersection input splits
-        continuing = S.difference input hit
-        new = S.fromList [ i | x <- S.toList hit, i <- [x - 1, x + 1] ]
-
-    !routeCount = sum $ M.restrictKeys routes starts
-    routes = foldl' addRoutes (M.fromSet (const 1) final) $ reverse hits
-    addRoutes old hit = M.union new old
-      where
-        new = M.fromSet (\i -> old M.! (i - 1) + old M.! (i + 1)) hit
+        hit = M.restrictKeys input splits
+        new = M.fromListWith (+) $ M.assocs hit >>= firstA (\i -> [i-1, i+1])
+        continuing = M.difference input hit
+        !next = M.unionWith (+) new continuing
 
 
 main :: IO ()
