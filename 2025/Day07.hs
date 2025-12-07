@@ -1,15 +1,15 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base, containers, array
+build-depends: base, containers
 -}
-{-# Language BangPatterns, LambdaCase #-}
+{-# Language BangPatterns #-}
 
 import Data.List (mapAccumL)
 
 import Data.Set (Set)
 import qualified Data.Set as S
 
-import Data.Array.Unboxed (UArray, (!), genArray)
+import qualified Data.Map.Strict as M
 
 input :: Int -> IO String
 input n = readFile name
@@ -28,30 +28,27 @@ parse s = (start, filter (not . S.null) splitters)
     chars c r = S.fromList [ i | (x, i) <- zip r [0..], x == c ]
 
 
-solve1 :: Input -> Int
-solve1 = sum . map S.size . snd . uncurry (mapAccumL step)
+solve :: Input -> (Int, Int)
+solve (starts, splitters) = ( sum $ map S.size hits
+                            , sum $ M.restrictKeys routes starts
+                            )
   where
-    step input splitters = (output, hits)
+    (final, hits) = mapAccumL collide starts splitters
+    collide input splits = (next, hit)
       where
-        !output = S.union continuing new
-        hits = S.intersection input splitters
-        continuing = S.difference input hits
-        new = S.fromList [ i | x <- S.toList hits, i <- [x - 1, x + 1] ]
+        !next = S.union continuing new
+        hit = S.intersection input splits
+        continuing = S.difference input hit
+        new = S.fromList [ i | x <- S.toList hit, i <- [x - 1, x + 1] ]
 
-
-solve2 :: Input -> Int
-solve2 (start, splitters) = sum [ result ! s | s <- S.toList start ]
-  where
-    b = (-1, maximum (S.unions splitters) + 1)
-    initial = genArray b (const 1) :: UArray Int Int
-    result = foldl' step initial $ reverse splitters
-    step prev splits = genArray b $
-        \case i | i `S.member` splits -> prev ! (i - 1) + prev ! (i + 1)
-                | otherwise -> prev ! i
+    routes = foldl' addRoutes (M.fromSet (const 1) final) $ reverse hits
+    addRoutes old hit = new `M.union` old
+      where
+        new = M.fromSet (\i -> old M.! (i - 1) + old M.! (i + 1)) hit
 
 
 main :: IO ()
 main = do
-    inp <- parse <$> input 0
-    print $ solve1 inp
-    print $ solve2 inp
+    (part1, part2) <- solve . parse <$> input 0
+    print part1
+    print part2
