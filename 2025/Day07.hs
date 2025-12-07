@@ -28,17 +28,19 @@ parse s = (starts, filter (not . S.null) splitters)
 
 
 solve :: Set Int -> [Set Int] -> (Int, Int)
-solve starts splitters = (hitCount, routeCount)
+solve startSet splitterRows = (splittersHit, routeCount)
   where
-    !hitCount = sum $ map M.size hits
-    !routeCount = sum final
-    (final, hits) = mapAccumL collide (M.fromSet (const 1) starts) splitters
-    collide input splits = (next, hit)
+    !splittersHit = sum $ map M.size hitCounts
+    !routeCount = sum finalCounts
+
+    (finalCounts, hitCounts) = mapAccumL step startCounts splitterRows
+    step beams splitters = (beamsOut, hit)
       where
-        hit = M.restrictKeys input splits
+        (hit, passed) = M.partitionWithKey (\k _ -> S.member k splitters) beams
         new = M.fromListWith (+) $ firstA (\i -> [i-1, i+1]) =<< M.assocs hit
-        continuing = M.difference input hit
-        !next = M.unionWith (+) new continuing
+        !beamsOut = M.unionWith (+) new passed
+
+    startCounts = M.fromSet (const 1) startSet
 
 
 main :: IO ()
