@@ -19,11 +19,9 @@ input n = readFile name
          | otherwise = "example/07-" ++ show n ++ ".txt"
 
 parse :: String -> (Set Int, [Set Int])
-parse s = (starts, filter (not . S.null) splitters)
+parse s = (locs 'S' first, map (locs '^') rest)
   where
     (first:rest) = lines s
-    starts = locs 'S' first
-    splitters = map (locs '^') rest
     locs c = S.fromList . elemIndices c
 
 
