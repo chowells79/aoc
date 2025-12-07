@@ -36,7 +36,7 @@ solve starts splitters = (hitCount, routeCount)
     collide input splits = (next, hit)
       where
         hit = M.restrictKeys input splits
-        new = M.fromListWith (+) $ M.assocs hit >>= firstA (\i -> [i-1, i+1])
+        new = M.fromListWith (+) $ firstA (\i -> [i-1, i+1]) =<< M.assocs hit
         continuing = M.difference input hit
         !next = M.unionWith (+) new continuing
 
