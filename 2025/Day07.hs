@@ -4,7 +4,7 @@ build-depends: base, containers
 -}
 {-# Language BangPatterns #-}
 
-import Data.List (mapAccumL)
+import Data.List (elemIndices, mapAccumL)
 
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -20,19 +20,18 @@ input n = readFile name
 type Input = (Set Int, [Set Int])
 
 parse :: String -> Input
-parse s = (start, filter (not . S.null) splitters)
+parse s = (starts, filter (not . S.null) splitters)
   where
     (first:rest) = lines s
-    start = chars 'S' first
-    splitters = map (chars '^') rest
-    chars c r = S.fromList [ i | (x, i) <- zip r [0..], x == c ]
+    starts = locs 'S' first
+    splitters = map (locs '^') rest
+    locs c = S.fromList . elemIndices c
 
 
 solve :: Input -> (Int, Int)
-solve (starts, splitters) = ( sum $ map S.size hits
-                            , sum $ M.restrictKeys routes starts
-                            )
+solve (starts, splitters) = (hitCount, routeCount)
   where
+    !hitCount = sum $ map S.size hits
     (final, hits) = mapAccumL collide starts splitters
     collide input splits = (next, hit)
       where
@@ -41,6 +40,7 @@ solve (starts, splitters) = ( sum $ map S.size hits
         continuing = S.difference input hit
         new = S.fromList [ i | x <- S.toList hit, i <- [x - 1, x + 1] ]
 
+    !routeCount = sum $ M.restrictKeys routes starts
     routes = foldl' addRoutes (M.fromSet (const 1) final) $ reverse hits
     addRoutes old hit = M.union new old
       where
