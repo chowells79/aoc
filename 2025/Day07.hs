@@ -42,7 +42,7 @@ solve (starts, splitters) = ( sum $ map S.size hits
         new = S.fromList [ i | x <- S.toList hit, i <- [x - 1, x + 1] ]
 
     routes = foldl' addRoutes (M.fromSet (const 1) final) $ reverse hits
-    addRoutes old hit = new `M.union` old
+    addRoutes old hit = M.union new old
       where
         new = M.fromSet (\i -> old M.! (i - 1) + old M.! (i + 1)) hit
 
