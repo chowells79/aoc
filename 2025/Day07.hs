@@ -18,9 +18,7 @@ input n = readFile name
     name | n == 0 = "input/07.txt"
          | otherwise = "example/07-" ++ show n ++ ".txt"
 
-type Input = (Set Int, [Set Int])
-
-parse :: String -> Input
+parse :: String -> (Set Int, [Set Int])
 parse s = (starts, filter (not . S.null) splitters)
   where
     (first:rest) = lines s
@@ -29,8 +27,8 @@ parse s = (starts, filter (not . S.null) splitters)
     locs c = S.fromList . elemIndices c
 
 
-solve :: Input -> (Int, Int)
-solve (starts, splitters) = (hitCount, routeCount)
+solve :: Set Int -> [Set Int] -> (Int, Int)
+solve starts splitters = (hitCount, routeCount)
   where
     !hitCount = sum $ map M.size hits
     !routeCount = sum final
@@ -45,6 +43,6 @@ solve (starts, splitters) = (hitCount, routeCount)
 
 main :: IO ()
 main = do
-    (part1, part2) <- solve . parse <$> input 0
+    (part1, part2) <- uncurry solve . parse <$> input 0
     print part1
     print part2
