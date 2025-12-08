@@ -52,7 +52,6 @@ fetchInput year day = do
                 fileName = printf "%s/%02d.txt" dirName (dayInt day)
             ensureDir dirName
             T.writeFile fileName input
-            setFileMode fileName createdMode
             putStrLn "Input fetched."
         False -> putStrLn "Not released, skipping input."
 
@@ -75,7 +74,7 @@ makeSolution year day = do
                 out = TT.substitute tpl ctx
 
             TL.writeFile outName out
-            setFileMode outName createdMode
+            setFileMode outName execMode
 
             putStrLn "Solution file created"
 
@@ -92,7 +91,6 @@ makeExample year day = do
             "Example input " ++ outName ++ " already exists. Not overwriting."
         False -> do
             T.writeFile outName $ T.pack ""
-            setFileMode outName createdMode
             putStrLn "(Empty) example input created"
 
 ensureDir :: String -> IO ()
@@ -102,10 +100,10 @@ ensureDir dirName = do
         True -> pure ()
         False -> do
             putStrLn $ "Creating directory " ++ dirName
-            createDirectory dirName createdMode
+            createDirectory dirName execMode
 
-createdMode :: FileMode
-createdMode = foldl' unionFileModes nullFileMode
+execMode :: FileMode
+execMode = foldl' unionFileModes nullFileMode
     [ ownerModes
     , groupReadMode, groupExecuteMode
     , otherReadMode, otherExecuteMode
