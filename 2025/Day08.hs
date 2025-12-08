@@ -34,8 +34,17 @@ d2 (x1, y1, z1) (x2, y2, z2) = dx * dx + dy * dy + dz * dz
     dy = y1 - y2
     dz = z1 - z2
 
-kruskall :: (Ord a, Ord b) => (a -> a -> b) -> [a] -> [((a, a), Bool, [Int])]
-kruskall dist cs = go (length cs) empty pairs
+-- Reports a trace of running Kruskal's algorithm on a complete graph.
+--
+-- Takes a distance function and a list of nodes.
+--
+-- Returns a list of steps taken:
+--
+-- 1. The pair of nodes considered
+-- 2. Whether the pair of nodes connected separate trees
+-- 3. The sizes of the non-trivial trees currently built
+kruskal :: (Ord a, Ord b) => (a -> a -> b) -> [a] -> [((a, a), Bool, [Int])]
+kruskal dist cs = go (length cs) empty pairs
   where
     pairs = sortOn (uncurry dist) [ (c1, c2) | (c1:xs) <- tails cs, c2 <- xs ]
 
@@ -50,7 +59,7 @@ kruskall dist cs = go (length cs) empty pairs
 solve :: [Coord] -> (Int, Int)
 solve cs = (p1, p2)
   where
-    ((_, _, circuits):rest) = drop 999 $ kruskall d2 cs
+    ((_, _, circuits):rest) = drop 999 $ kruskal d2 cs
     p1 = product . take 3 . sortOn Down $ circuits
     p2 = x1 * x2
       where
