@@ -14,8 +14,6 @@ import Control.Monad (guard)
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
 
-import Data.Set (Set)
-import qualified Data.Set as S
 
 type Coord = (Int, Int, Int)
 
@@ -36,10 +34,10 @@ d2 (x1, y1, z1) (x2, y2, z2) = dx * dx + dy * dy + dz * dz
     dy = y1 - y2
     dz = z1 - z2
 
-kruskall :: [Coord] -> [(Maybe (Coord, Coord), [Int])]
-kruskall cs = go (length cs) empty pairs
+kruskall :: (Ord a, Ord b) => ((a, a) -> b) -> [a] -> [(Maybe (a, a), [Int])]
+kruskall dist cs = go (length cs) empty pairs
   where
-    pairs = sortOn (uncurry d2) [ (c1, c2) | (c1:xs) <- tails cs, c2 <- xs ]
+    pairs = sortOn dist [ (c1, c2) | (c1:xs) <- tails cs, c2 <- xs ]
 
     go 1 _ _ = []
     go _ _ [] = []
@@ -52,7 +50,7 @@ kruskall cs = go (length cs) empty pairs
 solve :: [Coord] -> (Int, Int)
 solve cs = (p1, p2)
   where
-    ((_, circuits):rest) = drop 999 $ kruskall cs
+    ((_, circuits):rest) = drop 999 $ kruskall (uncurry d2) cs
     p1 = product . take 3 . sortOn Down $ circuits
     p2 = x1 * x2
       where
@@ -108,5 +106,5 @@ union x0 x1 (UF m0)
                       | otherwise -> find x' m
         Nothing -> (x, 1, M.insert x (P x 1) m)
 
-roots :: Ord a => UnionFind a -> [(a, Int)]
+roots :: Eq a => UnionFind a -> [(a, Int)]
 roots (UF m) = [ (a, i) | (a, P a' i) <- M.assocs m, a == a' ]
