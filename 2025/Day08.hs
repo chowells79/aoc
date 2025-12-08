@@ -34,27 +34,27 @@ d2 (x1, y1, z1) (x2, y2, z2) = dx * dx + dy * dy + dz * dz
     dy = y1 - y2
     dz = z1 - z2
 
-kruskall :: (Ord a, Ord b) => ((a, a) -> b) -> [a] -> [(Maybe (a, a), [Int])]
+kruskall :: (Ord a, Ord b) => (a -> a -> b) -> [a] -> [((a, a), Bool, [Int])]
 kruskall dist cs = go (length cs) empty pairs
   where
-    pairs = sortOn dist [ (c1, c2) | (c1:xs) <- tails cs, c2 <- xs ]
+    pairs = sortOn (uncurry dist) [ (c1, c2) | (c1:xs) <- tails cs, c2 <- xs ]
 
     go 1 _ _ = []
     go _ _ [] = []
-    go i !uf (p@(c1, c2):xs) =
-        (p <$ guard altered, map snd $ roots uf') : go i' uf' xs
+    go i uf (p@(c1, c2):xs) =
+        (p, altered, treeSizes uf') : go i' uf' xs
       where
-        (altered, uf') = union c1 c2 uf
+        (altered, !uf') = union c1 c2 uf
         i' = if altered then i - 1 else i
 
 solve :: [Coord] -> (Int, Int)
 solve cs = (p1, p2)
   where
-    ((_, circuits):rest) = drop 999 $ kruskall (uncurry d2) cs
+    ((_, _, circuits):rest) = drop 999 $ kruskall d2 cs
     p1 = product . take 3 . sortOn Down $ circuits
     p2 = x1 * x2
       where
-        (Just ((x1, _, _), (x2, _, _)), _) = last rest
+        (((x1, _, _), (x2, _, _)), True,  _) = last rest
 
 main :: IO ()
 main = do
@@ -82,12 +82,12 @@ main = do
 -- - provides a pure API for simplicity at the cost of efficiency
 
 data P a = P !a !Int deriving (Eq, Ord, Show)
-newtype UnionFind a = UF (Map a (P a)) deriving Show
+newtype UnionForest a = UF (Map a (P a)) deriving Show
 
-empty :: UnionFind a
+empty :: UnionForest a
 empty = UF M.empty
 
-union :: Ord a => a -> a -> UnionFind a -> (Bool, UnionFind a)
+union :: Ord a => a -> a -> UnionForest a -> (Bool, UnionForest a)
 union x0 x1 (UF m0)
     | v1 == v2 = (False, UF m0)
     | otherwise = (True, UF . updateRoot . updateChild $ m2)
@@ -106,5 +106,5 @@ union x0 x1 (UF m0)
                       | otherwise -> find x' m
         Nothing -> (x, 1, M.insert x (P x 1) m)
 
-roots :: Eq a => UnionFind a -> [(a, Int)]
-roots (UF m) = [ (a, i) | (a, P a' i) <- M.assocs m, a == a' ]
+treeSizes :: Eq a => UnionForest a -> [Int]
+treeSizes (UF m) = [ i | (a, P a' i) <- M.assocs m, a == a' ]
