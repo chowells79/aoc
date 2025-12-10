@@ -92,17 +92,14 @@ machineProblem (M _ vectors targets) =
 
     domains =
         M.fromList
-        [ (v, (MIP.IntegerVariable, (0, fromIntegral maxPresses)))
+        [ (v, (MIP.IntegerVariable, (0, fromIntegral $ sum targets)))
         | v <- vars
         ]
-
-    varCount = length targets
-    maxPresses = sum targets
 
     vars = [ fromString $ "v" ++ show n | n <- [1 .. length vectors] ]
     exprs = map MIP.varExpr vars
 
-    bitMatrix = map (take varCount . bits) vectors
+    bitMatrix = map (take (length targets) . bits) vectors
     bits b = b .&. 1 : bits (b `div` 2)
 
     buttons = map fst . filter ((== 1) . snd) . zip exprs
