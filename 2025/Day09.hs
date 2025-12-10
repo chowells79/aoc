@@ -59,8 +59,9 @@ compress cs = result
     result = [ (xm M.! x, ym M.! y) | (x, y) <- cs ]
 
 findFestive :: [(Int, Int)] -> Set (Int, Int)
-findFestive coords@((xf, yf):_) = S.unions [inside, hori, vert]
+findFestive coords@((xf, yf):_) = S.unions [red, inside, hori, vert]
   where
+    red = S.fromList coords
     (hori, vert) = lines coords (S.empty, S.empty)
 
     lines ((x1, y1):cs@((x2, y2):_)) (!h, !v) =
@@ -71,11 +72,10 @@ findFestive coords@((xf, yf):_) = S.unions [inside, hori, vert]
         | x1 == x2 = (h, S.union v col)
         | y1 == y2 = (S.union h row, v)
       where
-        xi = signum $ x2 - x1
-        yi = signum $ y2 - y1
+        (xl, xh, yl, yh) = (min x1 x2, max x1 x2, min y1 y2, max y1 y2)
 
-        row = S.fromList [ (x, y1) | x <- [ x1, x1 + xi .. x2 - xi ] ]
-        col = S.fromList [ (x1, y) | y <- [ y1, y1 + yi .. y2 - yi ] ]
+        row = S.fromList [ (x, y1) | x <- [ xl .. xh - 1 ] ]
+        col = S.fromList [ (x1, y) | y <- [ yl .. yh - 1 ] ]
 
     (xs, ys) = unzip coords
     (xl, xh) = (minimum xs, maximum xs)
