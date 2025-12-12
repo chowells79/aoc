@@ -1,32 +1,27 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base, containers, MIP, data-default, scientific
+build-depends: base, containers, MIP, data-default, scientific, matrix
 -}
-
 import Text.ParserCombinators.ReadP
 import Data.Char (isDigit)
 
 import Data.Traversable (forM)
-import Data.List (transpose)
 import Data.Bits (xor, (.&.))
 
-import Data.Set (Set)
 import qualified Data.Set as S
-
 
 
 import Data.String (fromString)
 
-import Data.Map (Map)
 import qualified Data.Map as M
 
-import Data.Default (def)
 import Data.Scientific (Scientific, toBoundedInteger)
 
 import qualified Numeric.Optimization.MIP as MIP
 import Numeric.Optimization.MIP.Solver as MIP
 import Numeric.Optimization.MIP ((.==.))
 
+import qualified Data.Matrix as Mat
 
 
 input :: Int -> IO String
@@ -75,34 +70,27 @@ machineProblem :: Machine -> MIP.Problem Scientific
 machineProblem (M _ vectors targets) =
     def
     { MIP.objectiveFunction = obFunc
-    , MIP.constraints = constrs
+    , MIP.constraints = constraints
     , MIP.varDomains = domains
     }
   where
-    obFunc =
-        def
-        { MIP.objDir = MIP.OptMin
-        , MIP.objExpr = sum exprs
-        }
-
-    constrs =
-        [ sum (buttons bitStr) .==. fromIntegral joltage
-        | (joltage, bitStr) <- zip targets $ transpose bitMatrix
-        ]
-
-    domains =
-        M.fromList
-        [ (v, (MIP.IntegerVariable, (0, fromIntegral $ sum targets)))
-        | v <- vars
-        ]
+    obFunc = def { MIP.objDir = MIP.OptMin , MIP.objExpr = sum exprs }
 
     vars = [ fromString $ "v" ++ show n | n <- [1 .. length vectors] ]
     exprs = map MIP.varExpr vars
 
-    bitMatrix = map (take (length targets) . bits) vectors
-    bits b = b .&. 1 : bits (b `div` 2)
+    constraints = Mat.toList $ Mat.elementwise (.==.) sums targets'
 
-    buttons = map fst . filter ((== 1) . snd) . zip exprs
+    sums = Mat.fromLists [exprs] * bitMatrix
+    targets' = Mat.fromLists [map fromIntegral targets]
+
+    bitMatrix = Mat.fromLists $ map (take (length targets) . bits) vectors
+    bits b = fromIntegral (b .&. 1) : bits (b `div` 2)
+
+    domains = M.fromList $ map varBounds vars
+
+    varBounds v = (v, (MIP.IntegerVariable, (0, upperBound)))
+    upperBound = fromIntegral $ sum targets
 
 
 solve2 :: [Machine] -> IO Int
