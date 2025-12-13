@@ -26,7 +26,9 @@ main = do
     let sessionKey = filter (not . isSpace) sessionKeyRaw
         userAgent = AoCUserAgent "private" "chowells79@gmail.com"
         opts = defaultAoCOpts userAgent year sessionKey
-    forM_ [ mkDay_ 1 .. mkDay_ 25 ] $ \day -> do
+        maxDay | year < 2025 = 25
+               | otherwise = 12
+    forM_ [ mkDay_ 1 .. mkDay_ maxDay ] $ \day -> do
         released <- challengeReleased year day
         when released $ do
             input <- runAoC_ opts $ AoCInput day
