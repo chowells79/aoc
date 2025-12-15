@@ -69,25 +69,20 @@ solve1 = sum . map presses
 machineProblem :: Machine -> MIP.Problem Scientific
 machineProblem (M _ vectors targets) =
     def
-    { MIP.objectiveFunction = obFunc
-    , MIP.constraints = constraints
-    , MIP.varDomains = domains
+    { MIP.objectiveFunction =
+          def { MIP.objDir = MIP.OptMin , MIP.objExpr = sum exprs }
+    , MIP.constraints = Mat.toList $ Mat.elementwise (.==.) sums goals
+    , MIP.varDomains = M.fromList $ map varBounds vars
     }
   where
-    obFunc = def { MIP.objDir = MIP.OptMin , MIP.objExpr = sum exprs }
-
     vars = [ fromString $ "v" ++ show n | n <- [1 .. length vectors] ]
     exprs = map MIP.varExpr vars
 
-    constraints = Mat.toList $ Mat.elementwise (.==.) sums targets'
-
     sums = Mat.fromLists [exprs] * bitMatrix
-    targets' = Mat.fromLists [map fromIntegral targets]
+    goals = Mat.fromLists [map fromIntegral targets]
 
     bitMatrix = Mat.fromLists $ map (take (length targets) . bits) vectors
     bits b = fromIntegral (b .&. 1) : bits (b `div` 2)
-
-    domains = M.fromList $ map varBounds vars
 
     varBounds v = (v, (MIP.IntegerVariable, (0, upperBound)))
     upperBound = fromIntegral $ sum targets
