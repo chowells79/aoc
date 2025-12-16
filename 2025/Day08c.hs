@@ -139,4 +139,4 @@ forestSizes :: UnionForest b s -> ST s [Int]
 forestSizes uf = V.ifoldrM rootSize [] (parents uf)
   where
     rootSize k p r | k == p = (: r ) <$> V.read (counts uf) k
-                 | otherwise = pure r
+                   | otherwise = pure r
