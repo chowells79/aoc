@@ -35,12 +35,12 @@ neighbors p@(r, c) = filter (/= p) [ (r', c')
                                    ]
 
 step :: Set (Int, Int) -> Set (Int, Int)
-step s = S.union old new
+step s = M.keysSet next
   where
     ns = M.fromListWith (+) [ (p', 1) | p <- S.toList s, p' <- neighbors p ]
-    (o, n) = M.partitionWithKey (\k _ -> S.member k s) ns
-    old = M.keysSet $ M.filter (\c -> c == 2 || c == 3) o
-    new = M.keysSet $ M.filter (\c -> c == 3) n
+    next = M.filterWithKey alive ns
+    alive p c | p `S.member` s = c == 2 || c == 3
+              | otherwise = c == 3
 
 solve1 :: Set (Int, Int) -> Int
 solve1 = S.size . (!! 100) . iterate step
