@@ -35,23 +35,21 @@ neighbors p@(r, c) = filter (/= p) [ (r', c')
                                    ]
 
 step :: Set (Int, Int) -> Set (Int, Int)
-step s = M.keysSet next
+step s = S.fromList [ p | (p, c) <- M.toList counts, alive p c ]
   where
-    ns = M.fromListWith (+) [ (p', 1) | p <- S.toList s, p' <- neighbors p ]
-    next = M.filterWithKey alive ns
+    counts = M.fromListWith (+) [(p', 1) | p <- S.toList s, p' <- neighbors p]
     alive p c | p `S.member` s = c == 2 || c == 3
               | otherwise = c == 3
 
 solve1 :: Set (Int, Int) -> Int
-solve1 = S.size . (!! 100) . iterate step
+solve1 = S.size . (!! 100) . iterate' step
 
 
 addCorners :: Set (Int, Int) -> Set (Int, Int)
 addCorners = S.union $ S.fromList [ (0, 0), (0, 99), (99, 99), (99, 0) ]
 
-
 solve2 :: Set (Int, Int) -> Int
-solve2 = S.size . (!! 100) . iterate (addCorners . step) . addCorners
+solve2 = S.size . (!! 100) . iterate' (addCorners . step) . addCorners
 
 
 main :: IO ()
